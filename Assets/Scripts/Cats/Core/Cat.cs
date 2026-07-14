@@ -41,6 +41,7 @@ namespace CatWorld.Cats
         [Header("Состояние")]
         [SerializeField] private CatActivity _currentActivity = CatActivity.Idle;
         [SerializeField] private FarmStatus _farmStatus = FarmStatus.OnFarm;
+        [SerializeField] private bool _canBreed; // задаётся CatAgeController по стадии
 
         // ---- Публичные геттеры ----
         public string Id => _id;
@@ -58,6 +59,7 @@ namespace CatWorld.Cats
         public IReadOnlyList<string> ChildrenIds => _childrenIds;
         public CatActivity CurrentActivity => _currentActivity;
         public FarmStatus FarmStatus => _farmStatus;
+        public bool CanBreed => _canBreed;
 
         /// <summary>
         /// Инициализирует кота стартовыми характеристиками. Генерирует уникальный ID,
@@ -127,6 +129,8 @@ namespace CatWorld.Cats
         // ---- Сеттеры состояния с валидацией ----
         public void SetActivity(CatActivity activity) => _currentActivity = activity;
         public void SetFarmStatus(FarmStatus status) => _farmStatus = status;
+        public void SetStage(LifeStage stage) => _stage = stage;
+        public void SetCanBreed(bool canBreed) => _canBreed = canBreed;
 
         public void SetSatiety(float value) => _satiety = Mathf.Clamp(value, MinNeed, MaxNeed);
         public void SetWater(float value) => _water = Mathf.Clamp(value, MinNeed, MaxNeed);

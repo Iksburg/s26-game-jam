@@ -15,7 +15,6 @@ namespace CatWorld.Cats
 
         [Header("Скорость")]
         [SerializeField] private float _moveSpeed = 2.5f;
-        [SerializeField] private float _seniorSpeedMultiplier = 0.6f; // пожилой кот медленнее (концепт)
 
         [Header("Остановки")]
         [SerializeField] private float _pauseMin = 1f;
@@ -29,6 +28,7 @@ namespace CatWorld.Cats
         private State _state;
         private Vector2 _target;
         private float _pauseTimer;
+        private float _speedMultiplier = 1f; // задаётся CatAgeController по стадии
 
         private void Awake()
         {
@@ -47,6 +47,12 @@ namespace CatWorld.Cats
         public void SetBounds(FarmBounds bounds)
         {
             _bounds = bounds;
+        }
+
+        /// <summary>Множитель скорости от стадии жизни (задаёт CatAgeController).</summary>
+        public void SetSpeedMultiplier(float multiplier)
+        {
+            _speedMultiplier = multiplier;
         }
 
         private void Update()
@@ -75,7 +81,7 @@ namespace CatWorld.Cats
         private void TickWalk()
         {
             Vector2 position = transform.position;
-            float speed = _moveSpeed * (_cat.Stage == LifeStage.Senior ? _seniorSpeedMultiplier : 1f);
+            float speed = _moveSpeed * _speedMultiplier;
             Vector2 next = Vector2.MoveTowards(position, _target, speed * Time.deltaTime);
 
             // Страж границы: не даём срезать вогнутые участки полигона.

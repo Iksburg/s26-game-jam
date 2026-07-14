@@ -12,6 +12,8 @@ namespace CatWorld.Cats
         [SerializeField] private CatColorPalette _palette;
         [SerializeField] private Cat _catPrefab;
         [SerializeField] private FarmBounds _bounds;
+        [Tooltip("Стадия нового кота. По концепту покупной кот — Adult; Kitten удобен для теста стадий.")]
+        [SerializeField] private LifeStage _initialStage = LifeStage.Adult;
 
         /// <summary>Создаёт кота с заданными полом и именем; остальное — по правилам спавна.</summary>
         public Cat SpawnCat(Sex sex, string catName)
@@ -20,7 +22,7 @@ namespace CatWorld.Cats
             var cat = Instantiate(_catPrefab, spawnPoint, Quaternion.identity);
             var furColor = _palette != null ? _palette.GetRandomColor() : Color.white;
 
-            cat.Initialize(catName, sex, LifeStage.Adult, furColor);
+            cat.Initialize(catName, sex, _initialStage, furColor);
             cat.name = $"Cat_{catName}";
 
             var view = cat.GetComponent<CatView>();

@@ -2,10 +2,21 @@ using UnityEngine;
 
 namespace CatWorld.Cats
 {
+    /// <summary>Способ отображения стадии жизни на визуале кота.</summary>
+    public enum StageVisualMode
+    {
+        /// <summary>Единственный спрайт (заглушка или арт), меняется только масштаб.</summary>
+        ScaleOnly,
+        /// <summary>Спрайт подменяется по стадии (котёнок/взрослый/пожилой); масштаб тоже применяется.</summary>
+        SpriteSwap
+    }
+
     /// <summary>
     /// Визуал кота: белый базовый спрайт, тонируемый цветом шерсти
     /// (по концепту все коты строятся из одного белого спрайта).
     /// Пока художественного спрайта нет — генерирует белый круг в рантайме.
+    /// Стадия жизни отражается масштабом (ScaleOnly, по умолчанию) или
+    /// подменой спрайта (SpriteSwap).
     /// </summary>
     [RequireComponent(typeof(SpriteRenderer))]
     public class CatView : MonoBehaviour
@@ -22,6 +33,13 @@ namespace CatWorld.Cats
         [Tooltip("Порядок отрисовки. Держите выше фона (у фонового спрайта — 0 или меньше).")]
         [SerializeField] private int _sortingOrder = 10;
 
+        [Header("Визуал стадий жизни")]
+        [SerializeField] private StageVisualMode _stageVisualMode = StageVisualMode.ScaleOnly;
+        [Tooltip("Спрайты для режима SpriteSwap. Пустой слот — спрайт стадии не подменяется.")]
+        [SerializeField] private Sprite _kittenSprite;
+        [SerializeField] private Sprite _adultSprite;
+        [SerializeField] private Sprite _seniorSprite;
+
         private void Awake()
         {
             if (_renderer == null)
@@ -37,6 +55,33 @@ namespace CatWorld.Cats
             if (_renderer == null)
                 _renderer = GetComponent<SpriteRenderer>();
             _renderer.color = furColor;
+        }
+
+        /// <summary>
+        /// Применяет визуал стадии жизни: масштаб всегда; в режиме SpriteSwap
+        /// дополнительно подменяет спрайт (если назначен для стадии).
+        /// </summary>
+        public void ApplyStage(LifeStage stage, float scale)
+        {
+            transform.localScale = new Vector3(scale, scale, 1f);
+
+            if (_stageVisualMode != StageVisualMode.SpriteSwap)
+                return;
+
+            Sprite stageSprite;
+            switch (stage)
+            {
+                case LifeStage.Kitten: stageSprite = _kittenSprite; break;
+                case LifeStage.Adult: stageSprite = _adultSprite; break;
+                default: stageSprite = _seniorSprite; break;
+            }
+
+            if (stageSprite == null)
+                return; // fallback: остаёмся на текущем спрайте
+
+            if (_renderer == null)
+                _renderer = GetComponent<SpriteRenderer>();
+            _renderer.sprite = stageSprite;
         }
 
         /// <summary>
