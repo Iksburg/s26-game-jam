@@ -154,8 +154,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CatWorld.Cats.CatWanderController
   _moveSpeed: 2.5
-  _pauseMin: 1
-  _pauseMax: 3
+  _pauseMin: 3
+  _pauseMax: 10
   _arrivalThreshold: 0.1
   _bounds: {fileID: 0}
 --- !u!114 &9093054719315002777
