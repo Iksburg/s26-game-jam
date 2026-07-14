@@ -16,6 +16,7 @@ namespace CatWorld.Cats.Editor
     public static class CatSpawnSceneBuilder
     {
         private const string PalettePath = "Assets/Data/CatColorPalette.asset";
+        private const string LifeStageSettingsPath = "Assets/Data/CatLifeStageSettings.asset";
         private const string CatPrefabPath = "Assets/Prefabs/Cat.prefab";
         private const string ScenePath = "Assets/Scenes/Dima/CatSpawn.unity";
 
@@ -27,7 +28,8 @@ namespace CatWorld.Cats.Editor
             _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
             CatColorPalette palette = BuildPalette();
-            Cat catPrefab = BuildCatPrefab();
+            CatLifeStageSettings lifeStageSettings = BuildLifeStageSettings();
+            Cat catPrefab = BuildCatPrefab(lifeStageSettings);
             BuildScene(palette, catPrefab);
 
             AssetDatabase.SaveAssets();
@@ -46,7 +48,19 @@ namespace CatWorld.Cats.Editor
             return palette;
         }
 
-        private static Cat BuildCatPrefab()
+        private static CatLifeStageSettings BuildLifeStageSettings()
+        {
+            var settings = AssetDatabase.LoadAssetAtPath<CatLifeStageSettings>(LifeStageSettingsPath);
+            if (settings != null)
+                return settings; // не перетираем тюнинг гейм-дизайнера
+
+            EnsureFolder("Assets/Data");
+            settings = ScriptableObject.CreateInstance<CatLifeStageSettings>();
+            AssetDatabase.CreateAsset(settings, LifeStageSettingsPath);
+            return settings;
+        }
+
+        private static Cat BuildCatPrefab(CatLifeStageSettings lifeStageSettings)
         {
             EnsureFolder("Assets/Prefabs");
 
@@ -55,6 +69,7 @@ namespace CatWorld.Cats.Editor
             temp.AddComponent<CatView>();
             temp.AddComponent<Cat>();
             temp.AddComponent<CatWanderController>(); // автономное перемещение
+            temp.AddComponent<CatAgeController>().Configure(lifeStageSettings); // стадии возраста
 
             var prefab = PrefabUtility.SaveAsPrefabAsset(temp, CatPrefabPath);
             Object.DestroyImmediate(temp);

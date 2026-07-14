@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 6928490476818959955}
   - component: {fileID: 5496063082718347507}
   - component: {fileID: 220351597381722376}
+  - component: {fileID: 9093054719315002777}
   m_Layer: 0
   m_Name: Cat
   m_TagString: Untagged
@@ -108,6 +109,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CatWorld.Cats.CatView
   _renderer: {fileID: 0}
   _sortingOrder: 10
+  _stageVisualMode: 0
+  _kittenSprite: {fileID: 0}
+  _adultSprite: {fileID: 0}
+  _seniorSprite: {fileID: 0}
 --- !u!114 &5496063082718347507
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -135,6 +140,7 @@ MonoBehaviour:
   _childrenIds: []
   _currentActivity: 0
   _farmStatus: 0
+  _canBreed: 0
 --- !u!114 &220351597381722376
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -148,8 +154,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CatWorld.Cats.CatWanderController
   _moveSpeed: 2.5
-  _seniorSpeedMultiplier: 0.6
-  _pauseMin: 1
-  _pauseMax: 3
+  _pauseMin: 3
+  _pauseMax: 10
   _arrivalThreshold: 0.1
   _bounds: {fileID: 0}
+--- !u!114 &9093054719315002777
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 481044569332887195}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eefa10fa20b96894eba076844ac0ac83, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CatWorld.Cats.CatAgeController
+  _settings: {fileID: 11400000, guid: 1de118d701a6c6e48b7d764d30b96134, type: 2}
