@@ -54,6 +54,7 @@ namespace CatWorld.Cats.Editor
             temp.AddComponent<SpriteRenderer>(); // спрайт-заглушку CatView создаст в рантайме
             temp.AddComponent<CatView>();
             temp.AddComponent<Cat>();
+            temp.AddComponent<CatWanderController>(); // автономное перемещение
 
             var prefab = PrefabUtility.SaveAsPrefabAsset(temp, CatPrefabPath);
             Object.DestroyImmediate(temp);
@@ -74,11 +75,33 @@ namespace CatWorld.Cats.Editor
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = new Color(0.36f, 0.55f, 0.29f); // лужайка фермы
 
-            // --- Поле фермы и спавнер ---
+            // --- Поле фермы, границы и спавнер ---
             var farmRoot = new GameObject("Farm").transform;
+
+            // Фон — мировой спрайт позади котов. Дизайнер назначит спрайт забора
+            // в SpriteRenderer.Sprite; коты (order 10) рисуются поверх (order -100).
+            var backgroundGo = new GameObject("FarmBackground");
+            backgroundGo.transform.SetParent(farmRoot, false);
+            var backgroundRenderer = backgroundGo.AddComponent<SpriteRenderer>();
+            backgroundRenderer.sortingOrder = -100;
+
+            var boundsGo = new GameObject("FarmBounds");
+            boundsGo.transform.SetParent(farmRoot, false);
+            var polygon = boundsGo.AddComponent<PolygonCollider2D>();
+            polygon.isTrigger = true;
+            // Дефолтный прямоугольник по вью камеры; дизайнер обведёт им забор на фоне.
+            polygon.points = new[]
+            {
+                new Vector2(-7f, -4f),
+                new Vector2(7f, -4f),
+                new Vector2(7f, 4f),
+                new Vector2(-7f, 4f)
+            };
+            var bounds = boundsGo.AddComponent<FarmBounds>();
+
             var spawnerGo = new GameObject("CatSpawner");
             var spawner = spawnerGo.AddComponent<CatSpawner>();
-            spawner.Configure(palette, catPrefab, farmRoot, new Vector2(14f, 7f));
+            spawner.Configure(palette, catPrefab, bounds);
 
             // --- EventSystem (проект на новом Input System) ---
             var eventSystemGo = new GameObject("EventSystem");
