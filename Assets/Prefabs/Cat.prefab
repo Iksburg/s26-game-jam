@@ -107,6 +107,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CatWorld.Cats.CatView
   _renderer: {fileID: 0}
+  _sortingOrder: 10
 --- !u!114 &5496063082718347507
 MonoBehaviour:
   m_ObjectHideFlags: 0

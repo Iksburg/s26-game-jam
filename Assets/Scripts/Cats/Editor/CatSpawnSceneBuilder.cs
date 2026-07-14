@@ -78,6 +78,13 @@ namespace CatWorld.Cats.Editor
             // --- Поле фермы, границы и спавнер ---
             var farmRoot = new GameObject("Farm").transform;
 
+            // Фон — мировой спрайт позади котов. Дизайнер назначит спрайт забора
+            // в SpriteRenderer.Sprite; коты (order 10) рисуются поверх (order -100).
+            var backgroundGo = new GameObject("FarmBackground");
+            backgroundGo.transform.SetParent(farmRoot, false);
+            var backgroundRenderer = backgroundGo.AddComponent<SpriteRenderer>();
+            backgroundRenderer.sortingOrder = -100;
+
             var boundsGo = new GameObject("FarmBounds");
             boundsGo.transform.SetParent(farmRoot, false);
             var polygon = boundsGo.AddComponent<PolygonCollider2D>();

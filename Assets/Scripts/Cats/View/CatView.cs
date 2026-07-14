@@ -10,16 +10,23 @@ namespace CatWorld.Cats
     [RequireComponent(typeof(SpriteRenderer))]
     public class CatView : MonoBehaviour
     {
-        private const int FallbackSpriteSize = 64;
+        // Разрешение текстуры заглушки — это КАЧЕСТВО, а не размер в мире.
+        private const int FallbackSpriteResolution = 256;
+        // Диаметр заглушки в мировых юнитах. Итоговый размер кота на сцене =
+        // этот диаметр × transform.localScale (масштаб задаётся на префабе / по возрасту).
+        private const float FallbackWorldDiameter = 1.5f;
 
         private static Sprite _fallbackSprite;
 
         [SerializeField] private SpriteRenderer _renderer;
+        [Tooltip("Порядок отрисовки. Держите выше фона (у фонового спрайта — 0 или меньше).")]
+        [SerializeField] private int _sortingOrder = 10;
 
         private void Awake()
         {
             if (_renderer == null)
                 _renderer = GetComponent<SpriteRenderer>();
+            _renderer.sortingOrder = _sortingOrder; // кот всегда над фоном
             if (_renderer.sprite == null)
                 _renderer.sprite = GetFallbackSprite();
         }
@@ -49,7 +56,7 @@ namespace CatWorld.Cats
             if (_fallbackSprite != null)
                 return _fallbackSprite;
 
-            int size = FallbackSpriteSize;
+            int size = FallbackSpriteResolution;
             var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
             texture.hideFlags = HideFlags.HideAndDontSave;
             float center = (size - 1) * 0.5f;
@@ -67,8 +74,10 @@ namespace CatWorld.Cats
             }
 
             texture.Apply();
+            // PPU развязан с разрешением: размер в мире задаёт только диаметр.
+            float pixelsPerUnit = FallbackSpriteResolution / FallbackWorldDiameter;
             _fallbackSprite = Sprite.Create(texture, new Rect(0, 0, size, size),
-                new Vector2(0.5f, 0.5f), FallbackSpriteSize);
+                new Vector2(0.5f, 0.5f), pixelsPerUnit);
             _fallbackSprite.hideFlags = HideFlags.HideAndDontSave;
             return _fallbackSprite;
         }
