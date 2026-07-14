@@ -32,6 +32,17 @@ namespace CatWorld.Cats
             _renderer.color = furColor;
         }
 
+        /// <summary>
+        /// Разворачивает спрайт по направлению движения. Базовый арт смотрит
+        /// вправо, поэтому для движения влево включается flipX.
+        /// </summary>
+        public void SetFacingRight(bool facingRight)
+        {
+            if (_renderer == null)
+                _renderer = GetComponent<SpriteRenderer>();
+            _renderer.flipX = !facingRight;
+        }
+
         /// <summary>Белый круг-заглушка, пока нет художественного спрайта кота.</summary>
         private static Sprite GetFallbackSprite()
         {
