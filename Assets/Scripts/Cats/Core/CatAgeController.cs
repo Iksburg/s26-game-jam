@@ -20,6 +20,7 @@ namespace CatWorld.Cats
         private Cat _cat;
         private CatView _view;
         private CatWanderController _wander;
+        private CatNeedsController _needs;
         private float _stageTimer;
         private float _leaveTimer;
 
@@ -28,6 +29,7 @@ namespace CatWorld.Cats
             _cat = GetComponent<Cat>();
             _view = GetComponent<CatView>();
             _wander = GetComponent<CatWanderController>();
+            _needs = GetComponent<CatNeedsController>();
         }
 
         private void Start()
@@ -98,6 +100,8 @@ namespace CatWorld.Cats
                 _view.ApplyStage(stage, config.scale);
             if (_wander != null)
                 _wander.SetSpeedMultiplier(config.speedMultiplier);
+            if (_needs != null)
+                _needs.SetRateMultipliers(config.hungerRateMultiplier, config.thirstRateMultiplier);
 
             _stageTimer = config.duration;
             _leaveTimer = _settings.SeniorLeaveCheckInterval;
