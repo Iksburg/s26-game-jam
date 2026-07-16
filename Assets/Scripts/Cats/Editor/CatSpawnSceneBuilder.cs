@@ -70,6 +70,7 @@ namespace CatWorld.Cats.Editor
             temp.AddComponent<Cat>();
             temp.AddComponent<CatWanderController>(); // автономное перемещение
             temp.AddComponent<CatAgeController>().Configure(lifeStageSettings); // стадии возраста
+            temp.AddComponent<CatNeedsController>(); // потребности (еда/вода/чистота)
 
             var prefab = PrefabUtility.SaveAsPrefabAsset(temp, CatPrefabPath);
             Object.DestroyImmediate(temp);
@@ -151,8 +152,141 @@ namespace CatWorld.Cats.Editor
                 maleToggle, femaleToggle, confirmButton, cancelButton);
             panelRoot.SetActive(false);
 
+            // --- Потребности: ресурсы, миски, UI запасов ---
+            EnsureNeedsObjects();
+
             EnsureFolder("Assets/Scenes/Dima");
             EditorSceneManager.SaveScene(scene, ScenePath);
+        }
+
+        /// <summary>
+        /// Дополняет СУЩЕСТВУЮЩУЮ сцену CatSpawn объектами задачи потребностей:
+        /// FarmResources, места мисок (пустые объекты) и число запасов в UI.
+        /// Камера и FarmBounds не изменяются. Также добавляет CatNeedsController
+        /// на префаб кота, не пересоздавая ассет.
+        /// </summary>
+        [MenuItem("Tools/CatWorld/Upgrade CatSpawn Scene (Needs)")]
+        public static void UpgradeForNeeds()
+        {
+            _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+
+            // 1. Префаб: добавляем компонент, сохраняя всё настроенное вручную.
+            var prefabRoot = PrefabUtility.LoadPrefabContents(CatPrefabPath);
+            if (prefabRoot.GetComponent<CatNeedsController>() == null)
+            {
+                prefabRoot.AddComponent<CatNeedsController>();
+                PrefabUtility.SaveAsPrefabAsset(prefabRoot, CatPrefabPath);
+            }
+            PrefabUtility.UnloadPrefabContents(prefabRoot);
+
+            // 2. Сцена: только дополняем.
+            var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            EnsureNeedsObjects();
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            AssetDatabase.SaveAssets();
+            Debug.Log("[CatSpawnSceneBuilder] Готово: FarmResources, миски и UI запасов добавлены в сцену и префаб.");
+        }
+
+        /// <summary>Создаёт недостающие объекты потребностей в активной сцене (идемпотентно).</summary>
+        private static void EnsureNeedsObjects()
+        {
+            // Запасы фермы (дефолт 100/100 задан в компоненте).
+            var resourcesGo = GameObject.Find("FarmResources");
+            if (resourcesGo == null)
+                resourcesGo = new GameObject("FarmResources");
+            var resources = resourcesGo.GetComponent<FarmResources>();
+            if (resources == null)
+                resources = resourcesGo.AddComponent<FarmResources>();
+
+            // Места мисок — пустые объекты внутри границ фермы.
+            var farm = GameObject.Find("Farm");
+            Transform farmRoot = farm != null ? farm.transform : null;
+            GetBowlPositions(out Vector2 foodPos, out Vector2 waterPos);
+            EnsureStation("FoodBowlSpot", NeedType.Food, foodPos, farmRoot);
+            EnsureStation("WaterBowlSpot", NeedType.Water, waterPos, farmRoot);
+
+            // Число запасов в правом верхнем углу UI.
+            if (GameObject.Find("ResourcesLabel") == null)
+            {
+                var canvas = Object.FindFirstObjectByType<Canvas>();
+                if (canvas != null)
+                {
+                    var label = CreateText(canvas.transform, "ResourcesLabel",
+                        "Корм: 100   Вода: 100", 34, new Color(0.15f, 0.12f, 0.08f));
+                    label.alignment = TextAnchor.MiddleRight;
+                    var rect = label.rectTransform;
+                    rect.anchorMin = rect.anchorMax = new Vector2(1f, 1f);
+                    rect.pivot = new Vector2(1f, 1f);
+                    rect.sizeDelta = new Vector2(460f, 50f);
+                    rect.anchoredPosition = new Vector2(-20f, -20f);
+
+                    var panel = label.gameObject.AddComponent<FarmResourcesPanel>();
+                    panel.Configure(resources, label);
+                }
+            }
+        }
+
+        private static void EnsureStation(string name, NeedType type, Vector2 position, Transform parent)
+        {
+            var go = GameObject.Find(name);
+            if (go == null)
+            {
+                go = new GameObject(name);
+                if (parent != null)
+                    go.transform.SetParent(parent, false);
+                go.transform.position = new Vector3(position.x, position.y, 0f);
+            }
+
+            // Компоненты навешиваем идемпотентно; позицию существующего объекта не трогаем.
+            var station = go.GetComponent<NeedStation>();
+            if (station == null)
+                station = go.AddComponent<NeedStation>();
+            station.SetType(type);
+
+            if (go.GetComponent<NeedStationView>() == null)
+                go.AddComponent<NeedStationView>(); // спрайты полной/пустой миски назначит дизайнер
+        }
+
+        /// <summary>Точки мисок внутри полигона FarmBounds (не меняя сам полигон).</summary>
+        private static void GetBowlPositions(out Vector2 foodPos, out Vector2 waterPos)
+        {
+            foodPos = new Vector2(-3f, 2f);
+            waterPos = new Vector2(3f, 2f);
+
+            var bounds = Object.FindFirstObjectByType<FarmBounds>();
+            if (bounds == null)
+                return;
+            var polygon = bounds.GetComponent<PolygonCollider2D>();
+            if (polygon == null || polygon.points.Length < 3)
+                return;
+
+            Vector2 center = polygon.bounds.center;
+            float offsetX = polygon.bounds.extents.x * 0.4f;
+            Vector2 food = center + new Vector2(-offsetX, 0f);
+            Vector2 water = center + new Vector2(offsetX, 0f);
+
+            Vector2[] worldPoints = new Vector2[polygon.points.Length];
+            for (int i = 0; i < worldPoints.Length; i++)
+                worldPoints[i] = polygon.transform.TransformPoint(polygon.points[i]);
+
+            foodPos = PointInPolygon(food, worldPoints) ? food : center;
+            waterPos = PointInPolygon(water, worldPoints) ? water : center;
+        }
+
+        private static bool PointInPolygon(Vector2 point, Vector2[] polygon)
+        {
+            bool inside = false;
+            for (int i = 0, j = polygon.Length - 1; i < polygon.Length; j = i++)
+            {
+                if (polygon[i].y > point.y != polygon[j].y > point.y &&
+                    point.x < (polygon[j].x - polygon[i].x) * (point.y - polygon[i].y) /
+                    (polygon[j].y - polygon[i].y) + polygon[i].x)
+                {
+                    inside = !inside;
+                }
+            }
+            return inside;
         }
 
         private static GameObject BuildSpawnPanel(Transform canvas,

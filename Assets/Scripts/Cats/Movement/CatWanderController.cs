@@ -7,11 +7,13 @@ namespace CatWorld.Cats
     /// FarmBounds, по прибытии останавливается на случайное время, затем выбирает
     /// новую точку. Меняет активность (Idle/Walking) и разворачивает спрайт по
     /// направлению движения. За границы зоны не выходит.
+    /// Поддерживает внешнюю цель (миска и т.п.): SetExternalTarget ведёт кота к
+    /// точке и удерживает его там до ClearExternalTarget.
     /// </summary>
     [RequireComponent(typeof(Cat))]
     public class CatWanderController : MonoBehaviour
     {
-        private enum State { Paused, Walking }
+        private enum State { Paused, Walking, Held }
 
         [Header("Скорость")]
         [SerializeField] private float _moveSpeed = 2.5f;
@@ -29,6 +31,8 @@ namespace CatWorld.Cats
         private Vector2 _target;
         private float _pauseTimer;
         private float _speedMultiplier = 1f; // задаётся CatAgeController по стадии
+        private bool _hasExternalTarget;
+        private System.Action _onExternalArrived;
 
         private void Awake()
         {
@@ -55,6 +59,30 @@ namespace CatWorld.Cats
             _speedMultiplier = multiplier;
         }
 
+        /// <summary>
+        /// Ведёт кота к внешней цели (миска и т.п.) вместо случайного блуждания.
+        /// По прибытии вызывает onArrived и удерживает кота на месте
+        /// до ClearExternalTarget.
+        /// </summary>
+        public void SetExternalTarget(Vector2 target, System.Action onArrived)
+        {
+            _hasExternalTarget = true;
+            _onExternalArrived = onArrived;
+            _target = target;
+            _state = State.Walking;
+            if (_cat != null)
+                _cat.SetActivity(CatActivity.Walking);
+        }
+
+        /// <summary>Снимает внешнюю цель и возвращает кота к обычному блужданию.</summary>
+        public void ClearExternalTarget()
+        {
+            _hasExternalTarget = false;
+            _onExternalArrived = null;
+            if (_state == State.Held || _state == State.Walking)
+                EnterPause();
+        }
+
         private void Update()
         {
             if (_bounds == null)
@@ -68,6 +96,8 @@ namespace CatWorld.Cats
                 case State.Walking:
                     TickWalk();
                     break;
+                case State.Held:
+                    break; // стоим у внешней цели до ClearExternalTarget
             }
         }
 
@@ -85,7 +115,8 @@ namespace CatWorld.Cats
             Vector2 next = Vector2.MoveTowards(position, _target, speed * Time.deltaTime);
 
             // Страж границы: не даём срезать вогнутые участки полигона.
-            if (!_bounds.Contains(next))
+            // К внешней цели (миске) идём без стража — она размещается внутри зоны.
+            if (!_hasExternalTarget && !_bounds.Contains(next))
             {
                 PickNewTarget();
                 return;
@@ -95,7 +126,19 @@ namespace CatWorld.Cats
             transform.position = new Vector3(next.x, next.y, transform.position.z);
 
             if (Vector2.Distance(next, _target) < _arrivalThreshold)
-                EnterPause();
+            {
+                if (_hasExternalTarget)
+                {
+                    _state = State.Held;
+                    var callback = _onExternalArrived;
+                    _onExternalArrived = null;
+                    callback?.Invoke();
+                }
+                else
+                {
+                    EnterPause();
+                }
+            }
         }
 
         private void EnterPause()
