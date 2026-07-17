@@ -47,6 +47,35 @@ namespace CatWorld.Cats
             _renderer.sortingOrder = _sortingOrder; // кот всегда над фоном
             if (_renderer.sprite == null)
                 _renderer.sprite = GetFallbackSprite();
+            FitClickCollider();
+        }
+
+        /// <summary>
+        /// Подгоняет кликовый коллайдер под фактические границы текущего спрайта,
+        /// чтобы ПКМ срабатывал по всей площади арта, а не только по центру.
+        /// Радиус — по большей полуоси спрайта, центр — по центру его bounds
+        /// (масштаб стадии коллайдер наследует от transform автоматически).
+        /// </summary>
+        private void FitClickCollider()
+        {
+            var collider = GetComponent<CircleCollider2D>();
+            if (collider == null || _renderer == null || _renderer.sprite == null)
+                return;
+
+            Bounds spriteBounds = _renderer.sprite.bounds; // локальные, без учёта scale
+            collider.radius = Mathf.Max(spriteBounds.extents.x, spriteBounds.extents.y);
+            collider.offset = spriteBounds.center; // компенсация смещённого pivot
+        }
+
+        /// <summary>Текущий спрайт кота — для иконки в карточке.</summary>
+        public Sprite CurrentSprite
+        {
+            get
+            {
+                if (_renderer == null)
+                    _renderer = GetComponent<SpriteRenderer>();
+                return _renderer.sprite != null ? _renderer.sprite : GetFallbackSprite();
+            }
         }
 
         /// <summary>Тонирует базовый белый спрайт цветом шерсти.</summary>
@@ -82,6 +111,7 @@ namespace CatWorld.Cats
             if (_renderer == null)
                 _renderer = GetComponent<SpriteRenderer>();
             _renderer.sprite = stageSprite;
+            FitClickCollider(); // у спрайта стадии другие размеры
         }
 
         /// <summary>

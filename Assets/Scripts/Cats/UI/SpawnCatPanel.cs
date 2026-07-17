@@ -11,6 +11,9 @@ namespace CatWorld.Cats
     /// </summary>
     public class SpawnCatPanel : MonoBehaviour
     {
+        /// <summary>Максимальная длина имени кота (включая пробелы).</summary>
+        public const int MaxNameLength = 24;
+
         [SerializeField] private CatSpawner _spawner;
         [SerializeField] private Button _openButton;
         [SerializeField] private GameObject _panelRoot;
@@ -26,6 +29,7 @@ namespace CatWorld.Cats
             _confirmButton.onClick.AddListener(Confirm);
             _cancelButton.onClick.AddListener(Close);
             _nameInput.onValueChanged.AddListener(OnNameChanged);
+            _nameInput.characterLimit = MaxNameLength; // ввод длиннее блокируется полем
             _panelRoot.SetActive(false);
         }
 
@@ -50,6 +54,9 @@ namespace CatWorld.Cats
             string catName = _nameInput.text.Trim();
             if (string.IsNullOrEmpty(catName))
                 return;
+            // Страховка на случай программной вставки текста мимо characterLimit.
+            if (catName.Length > MaxNameLength)
+                catName = catName.Substring(0, MaxNameLength);
 
             Sex sex = _maleToggle.isOn ? Sex.Male : Sex.Female;
             _spawner.SpawnCat(sex, catName);
