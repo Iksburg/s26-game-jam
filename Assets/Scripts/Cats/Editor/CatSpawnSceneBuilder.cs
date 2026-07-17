@@ -218,6 +218,29 @@ namespace CatWorld.Cats.Editor
             Debug.Log("[CatSpawnSceneBuilder] Готово: карточка кота, семейное древо и мини-меню добавлены.");
         }
 
+        /// <summary>
+        /// Навешивает на префаб кота CatAnimationController (управление Idle-анимацией
+        /// по активности). Animator/контроллер, добавленные вручную, сохраняются.
+        /// Сцену и настройки не трогает.
+        /// </summary>
+        [MenuItem("Tools/CatWorld/Upgrade Cat Prefab (Animation)")]
+        public static void UpgradeForAnimation()
+        {
+            var prefabRoot = PrefabUtility.LoadPrefabContents(CatPrefabPath);
+            if (prefabRoot.GetComponent<CatAnimationController>() == null)
+            {
+                prefabRoot.AddComponent<CatAnimationController>();
+                PrefabUtility.SaveAsPrefabAsset(prefabRoot, CatPrefabPath);
+                Debug.Log("[CatSpawnSceneBuilder] CatAnimationController добавлен на префаб кота.");
+            }
+            else
+            {
+                Debug.Log("[CatSpawnSceneBuilder] CatAnimationController уже на префабе.");
+            }
+            PrefabUtility.UnloadPrefabContents(prefabRoot);
+            AssetDatabase.SaveAssets();
+        }
+
         /// <summary>Создаёт UI карточки в активной сцене (идемпотентно).</summary>
         private static void EnsureCardObjects()
         {
