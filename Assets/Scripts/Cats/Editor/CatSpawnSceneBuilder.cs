@@ -188,6 +188,215 @@ namespace CatWorld.Cats.Editor
             Debug.Log("[CatSpawnSceneBuilder] Готово: FarmResources, миски и UI запасов добавлены в сцену и префаб.");
         }
 
+        /// <summary>
+        /// Дополняет СУЩЕСТВУЮЩУЮ сцену CatSpawn карточкой кота, окном семейного
+        /// древа и мини-меню по ПКМ. Добавляет коллайдер на префаб кота для клика.
+        /// Камера и FarmBounds не изменяются.
+        /// </summary>
+        [MenuItem("Tools/CatWorld/Upgrade CatSpawn Scene (Cat Card)")]
+        public static void UpgradeForCards()
+        {
+            _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+
+            // 1. Префаб: коллайдер нужен для ПКМ-рейкаста.
+            var prefabRoot = PrefabUtility.LoadPrefabContents(CatPrefabPath);
+            if (prefabRoot.GetComponent<Collider2D>() == null)
+            {
+                var circle = prefabRoot.AddComponent<CircleCollider2D>();
+                circle.radius = 0.75f; // радиус спрайта-заглушки; масштабируется стадией
+                circle.isTrigger = true;
+                PrefabUtility.SaveAsPrefabAsset(prefabRoot, CatPrefabPath);
+            }
+            PrefabUtility.UnloadPrefabContents(prefabRoot);
+
+            // 2. Сцена: только дополняем.
+            var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            EnsureCardObjects();
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            AssetDatabase.SaveAssets();
+            Debug.Log("[CatSpawnSceneBuilder] Готово: карточка кота, семейное древо и мини-меню добавлены.");
+        }
+
+        /// <summary>Создаёт UI карточки в активной сцене (идемпотентно).</summary>
+        private static void EnsureCardObjects()
+        {
+            if (GameObject.Find("CatCardPanel") != null)
+                return; // уже собрано
+
+            var canvas = Object.FindFirstObjectByType<Canvas>();
+            if (canvas == null)
+                return;
+
+            // --- Мини-меню по ПКМ (создаём первым: карточка должна перекрывать) ---
+            var menuGo = CreateUiObject("CatContextMenu", canvas.transform);
+            var menuRect = menuGo.GetComponent<RectTransform>();
+            menuRect.pivot = new Vector2(0f, 0.5f); // растёт вправо от кота
+            menuRect.sizeDelta = new Vector2(190f, 60f);
+            var menuImage = menuGo.AddComponent<Image>();
+            menuImage.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Background.psd");
+            menuImage.type = Image.Type.Sliced;
+            menuImage.color = new Color(0.96f, 0.93f, 0.85f);
+
+            var inspectButton = CreateButton(menuGo.transform, "InspectButton", "Осмотреть",
+                new Vector2(170f, 46f));
+            inspectButton.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
+
+            var contextMenu = menuGo.AddComponent<CatContextMenu>();
+
+            // --- Карточка кота ---
+            var cardDim = CreateUiObject("CatCardPanel", canvas.transform);
+            StretchFull(cardDim.GetComponent<RectTransform>());
+            var cardDimImage = cardDim.AddComponent<Image>();
+            cardDimImage.color = new Color(0f, 0f, 0f, 0.5f);
+
+            var card = CreateUiObject("Window", cardDim.transform);
+            var cardRect = card.GetComponent<RectTransform>();
+            cardRect.sizeDelta = new Vector2(720f, 560f);
+            var cardImage = card.AddComponent<Image>();
+            cardImage.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Background.psd");
+            cardImage.type = Image.Type.Sliced;
+            cardImage.color = new Color(0.96f, 0.93f, 0.85f);
+
+            // Иконка кота — левый верхний угол
+            var icon = CreateImageObject(card.transform, "CatIcon", new Vector2(130f, 130f));
+            AnchorTopLeft(icon.rectTransform, new Vector2(24f, -24f));
+
+            // Имя — под иконкой
+            var nameLabel = CreateText(card.transform, "NameLabel", "Имя", 34,
+                new Color(0.2f, 0.16f, 0.1f));
+            nameLabel.alignment = TextAnchor.MiddleLeft;
+            nameLabel.rectTransform.sizeDelta = new Vector2(200f, 44f);
+            AnchorTopLeft(nameLabel.rectTransform, new Vector2(24f, -162f));
+
+            // Пол — изображение под именем (спрайты назначает дизайнер)
+            var sexIcon = CreateImageObject(card.transform, "SexIcon", new Vector2(56f, 56f));
+            AnchorTopLeft(sexIcon.rectTransform, new Vector2(24f, -212f));
+
+            // Стадия роста — справа от иконки
+            var stageLabel = CreateText(card.transform, "StageLabel", "Взрослый", 34,
+                new Color(0.2f, 0.16f, 0.1f));
+            stageLabel.alignment = TextAnchor.MiddleLeft;
+            stageLabel.rectTransform.sizeDelta = new Vector2(380f, 44f);
+            AnchorTopLeft(stageLabel.rectTransform, new Vector2(180f, -28f));
+
+            // Показатели — под стадией
+            var satiety = CreateNeedLabel(card.transform, "SatietyLabel", "Сытость: 100%", -86f);
+            var water = CreateNeedLabel(card.transform, "WaterLabel", "Жажда: 100%", -128f);
+            var cleanliness = CreateNeedLabel(card.transform, "CleanlinessLabel", "Чистота: 100%", -170f);
+
+            // Блок черт — под показателями (заготовка)
+            var traitsBlock = CreateUiObject("TraitsBlock", card.transform);
+            var traitsRect = traitsBlock.GetComponent<RectTransform>();
+            traitsRect.sizeDelta = new Vector2(660f, 150f);
+            AnchorTopLeft(traitsRect, new Vector2(24f, -290f));
+            var traitsImage = traitsBlock.AddComponent<Image>();
+            traitsImage.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+            traitsImage.type = Image.Type.Sliced;
+            traitsImage.color = new Color(0.90f, 0.86f, 0.76f);
+
+            var traitsPlaceholder = CreateText(traitsBlock.transform, "TraitsPlaceholder",
+                "Черты характера: пока нет", 28, new Color(0.4f, 0.35f, 0.28f));
+            StretchWithPadding(traitsPlaceholder.rectTransform, 16f, 8f);
+            traitsPlaceholder.alignment = TextAnchor.UpperLeft;
+
+            // Кнопка семейного древа — снизу по центру
+            var treeButton = CreateButton(card.transform, "FamilyTreeButton", "Семейное древо",
+                new Vector2(300f, 70f));
+            var treeRect = treeButton.GetComponent<RectTransform>();
+            treeRect.anchorMin = treeRect.anchorMax = new Vector2(0.5f, 0f);
+            treeRect.pivot = new Vector2(0.5f, 0f);
+            treeRect.anchoredPosition = new Vector2(0f, 22f);
+
+            // Кнопка закрытия — максимально в правом верхнем углу
+            var cardClose = CreateButton(card.transform, "CloseButton", "X", new Vector2(56f, 56f));
+            var cardCloseRect = cardClose.GetComponent<RectTransform>();
+            cardCloseRect.anchorMin = cardCloseRect.anchorMax = new Vector2(1f, 1f);
+            cardCloseRect.pivot = new Vector2(1f, 1f);
+            cardCloseRect.anchoredPosition = Vector2.zero;
+
+            // --- Семейное древо (последним: рисуется поверх карточки) ---
+            var treeDim = CreateUiObject("FamilyTreePanel", canvas.transform);
+            StretchFull(treeDim.GetComponent<RectTransform>());
+            var treeDimImage = treeDim.AddComponent<Image>();
+            treeDimImage.color = new Color(0f, 0f, 0f, 0.5f);
+
+            var treeWindow = CreateUiObject("Window", treeDim.transform);
+            var treeWindowRect = treeWindow.GetComponent<RectTransform>();
+            treeWindowRect.sizeDelta = new Vector2(900f, 620f);
+            var treeWindowImage = treeWindow.AddComponent<Image>();
+            treeWindowImage.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Background.psd");
+            treeWindowImage.type = Image.Type.Sliced;
+            treeWindowImage.color = new Color(0.96f, 0.93f, 0.85f);
+
+            var treeTitle = CreateText(treeWindow.transform, "Title", "Семейное древо", 40,
+                new Color(0.25f, 0.2f, 0.15f));
+            var treeTitleRect = treeTitle.rectTransform;
+            treeTitleRect.anchorMin = treeTitleRect.anchorMax = new Vector2(0.5f, 1f);
+            treeTitleRect.pivot = new Vector2(0.5f, 1f);
+            treeTitleRect.sizeDelta = new Vector2(600f, 60f);
+            treeTitleRect.anchoredPosition = new Vector2(0f, -24f);
+
+            var treeClose = CreateButton(treeWindow.transform, "CloseButton", "X", new Vector2(56f, 56f));
+            var treeCloseRect = treeClose.GetComponent<RectTransform>();
+            treeCloseRect.anchorMin = treeCloseRect.anchorMax = new Vector2(1f, 1f);
+            treeCloseRect.pivot = new Vector2(1f, 1f);
+            treeCloseRect.anchoredPosition = Vector2.zero;
+
+            var familyTree = treeDim.AddComponent<FamilyTreePanel>();
+            familyTree.Configure(treeDim, treeClose);
+            treeDim.SetActive(false);
+
+            // --- Связывание ---
+            var cardPanel = cardDim.AddComponent<CatCardPanel>();
+            cardPanel.Configure(cardDim, icon, nameLabel, sexIcon, stageLabel,
+                satiety, water, cleanliness, traitsBlock.transform, traitsPlaceholder,
+                treeButton, cardClose, familyTree);
+            cardDim.SetActive(false);
+
+            contextMenu.Configure(menuGo, menuRect, inspectButton, cardPanel);
+            menuGo.SetActive(false);
+
+            // Детектор ПКМ по котам
+            var detectorGo = GameObject.Find("CatClickDetector");
+            if (detectorGo == null)
+                detectorGo = new GameObject("CatClickDetector");
+            var detector = detectorGo.GetComponent<CatClickDetector>();
+            if (detector == null)
+                detector = detectorGo.AddComponent<CatClickDetector>();
+            detector.Configure(contextMenu);
+        }
+
+        private static Image CreateImageObject(Transform parent, string name, Vector2 size)
+        {
+            var go = CreateUiObject(name, parent);
+            go.GetComponent<RectTransform>().sizeDelta = size;
+            return go.AddComponent<Image>();
+        }
+
+        private static Text CreateNeedLabel(Transform parent, string name, string value, float y)
+        {
+            var label = CreateText(parent, name, value, 30, new Color(0.28f, 0.24f, 0.18f));
+            label.alignment = TextAnchor.MiddleLeft;
+            label.rectTransform.sizeDelta = new Vector2(380f, 38f);
+            AnchorTopLeft(label.rectTransform, new Vector2(180f, y));
+            return label;
+        }
+
+        private static void AnchorTopLeft(RectTransform rect, Vector2 anchoredPosition)
+        {
+            rect.anchorMin = rect.anchorMax = new Vector2(0f, 1f);
+            rect.pivot = new Vector2(0f, 1f);
+            rect.anchoredPosition = anchoredPosition;
+        }
+
+        private static void StretchFull(RectTransform rect)
+        {
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = rect.offsetMax = Vector2.zero;
+        }
+
         /// <summary>Создаёт недостающие объекты потребностей в активной сцене (идемпотентно).</summary>
         private static void EnsureNeedsObjects()
         {
