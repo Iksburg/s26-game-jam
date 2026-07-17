@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CatWorld.Cats.CatLifeStageSettings
   _kitten:
     duration: 20
-    scale: 0.25
+    scale: 0.62
     speedMultiplier: 1.2
     hungerRateMultiplier: 1.2
     thirstRateMultiplier: 1.2
@@ -22,7 +22,7 @@ MonoBehaviour:
     sleepFrequencyMultiplier: 1
   _adult:
     duration: 20
-    scale: 0.4
+    scale: 0.42
     speedMultiplier: 1
     hungerRateMultiplier: 1
     thirstRateMultiplier: 1
