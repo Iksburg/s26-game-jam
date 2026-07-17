@@ -241,6 +241,41 @@ namespace CatWorld.Cats.Editor
             AssetDatabase.SaveAssets();
         }
 
+        /// <summary>
+        /// Навешивает CatAnimationController на префаб (если нет) и подключает
+        /// контроллеры анимации по стадиям: котёнок → KittenController,
+        /// взрослый → CatController, пожилой → CatController (временно).
+        /// </summary>
+        [MenuItem("Tools/CatWorld/Upgrade Cat Prefab (Stage Animators)")]
+        public static void UpgradeForStageAnimators()
+        {
+            const string kittenPath = "Assets/Art/Animations/Kitten/Controller/KittenController.controller";
+            const string adultPath = "Assets/Art/Animations/Cat/Controller/CatController.controller";
+            var kitten = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(kittenPath);
+            var adult = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(adultPath);
+            if (kitten == null || adult == null)
+            {
+                Debug.LogError("[CatSpawnSceneBuilder] Не найдены контроллеры анимации по путям.");
+                return;
+            }
+
+            var prefabRoot = PrefabUtility.LoadPrefabContents(CatPrefabPath);
+            var anim = prefabRoot.GetComponent<CatAnimationController>();
+            if (anim == null)
+                anim = prefabRoot.AddComponent<CatAnimationController>();
+
+            var so = new SerializedObject(anim);
+            so.FindProperty("_kittenController").objectReferenceValue = kitten;
+            so.FindProperty("_adultController").objectReferenceValue = adult;
+            so.FindProperty("_seniorController").objectReferenceValue = adult; // временно — как взрослый
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            PrefabUtility.SaveAsPrefabAsset(prefabRoot, CatPrefabPath);
+            PrefabUtility.UnloadPrefabContents(prefabRoot);
+            AssetDatabase.SaveAssets();
+            Debug.Log("[CatSpawnSceneBuilder] Контроллеры анимации по стадиям подключены к префабу.");
+        }
+
         /// <summary>Создаёт UI карточки в активной сцене (идемпотентно).</summary>
         private static void EnsureCardObjects()
         {
