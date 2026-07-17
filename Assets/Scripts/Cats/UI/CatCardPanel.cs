@@ -1,3 +1,5 @@
+using Cats.Genome;
+using Cats.UI;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -31,6 +33,9 @@ namespace CatWorld.Cats
         [SerializeField] private Text _waterLabel;
         [SerializeField] private Text _cleanlinessLabel;
 
+        [Header("Родословная в карточке")]
+        [SerializeField] private Text _parentsLabel; // Текст для вывода отца и матери
+
         [Header("Черты характера")]
         [Tooltip("Контейнер под черты. Пока пусто — заготовка под будущую задачу.")]
         [SerializeField] private Transform _traitsContainer;
@@ -60,6 +65,7 @@ namespace CatWorld.Cats
         /// <summary>Заполняется билдером сцены (editor wiring).</summary>
         public void Configure(GameObject root, Image icon, Text nameLabel, Image sexIcon,
             Text stageLabel, Text satietyLabel, Text waterLabel, Text cleanlinessLabel,
+            Text parentsLabel, // Добавлено в билдер
             Transform traitsContainer, Text traitsPlaceholder,
             Button familyTreeButton, Button closeButton, FamilyTreePanel familyTree)
         {
@@ -71,6 +77,7 @@ namespace CatWorld.Cats
             _satietyLabel = satietyLabel;
             _waterLabel = waterLabel;
             _cleanlinessLabel = cleanlinessLabel;
+            _parentsLabel = parentsLabel; // Добавлено в билдер
             _traitsContainer = traitsContainer;
             _traitsPlaceholder = traitsPlaceholder;
             _familyTreeButton = familyTreeButton;
@@ -110,7 +117,7 @@ namespace CatWorld.Cats
             RefreshNeeds();
         }
 
-        /// <summary>Данные, меняющиеся редко: иконка, имя, пол, стадия, черты.</summary>
+        /// <summary>Данные, меняющиеся редко: иконка, имя, пол, стадия, черты, родители.</summary>
         private void RefreshStatic()
         {
             if (_cat == null)
@@ -129,7 +136,7 @@ namespace CatWorld.Cats
 
             if (_sexIcon != null)
             {
-                Sprite sexSprite = _cat.Sex == Sex.Male ? _maleSprite : _femaleSprite;
+                var sexSprite = _cat.Sex == Sex.Male ? _maleSprite : _femaleSprite;
                 _sexIcon.sprite = sexSprite;
                 // Пока спрайты пола не назначены — не показываем пустой квадрат.
                 _sexIcon.enabled = sexSprite != null;
@@ -144,7 +151,32 @@ namespace CatWorld.Cats
             if (_stageLabel != null)
                 _stageLabel.text = GetStageName(_cat.Stage);
 
+            // Обновляем информацию о родителях
+            RefreshParentsInfo();
+
             RefreshTraits();
+        }
+
+        /// <summary>Выводит имена родителей из генома, если они существуют.</summary>
+        private void RefreshParentsInfo()
+        {
+            if (_parentsLabel == null)
+                return;
+
+            var genome = _cat.Genome;
+    
+            // Если у кота нет генома или список родителей пуст — это первое поколение
+            if (genome?.Parents == null || genome.Parents.Count == 0)
+            {
+                _parentsLabel.text = "Родословная: Первое поколение";
+                return;
+            }
+
+            // Извлекаем имена напрямую из C# объектов генома родителей!
+            var fatherName = genome.Parents.Count > 0 ? genome.Parents[0].Name : "Неизвестно";
+            var motherName = genome.Parents.Count > 1 ? genome.Parents[1].Name : "Неизвестно";
+
+            _parentsLabel.text = $"Родители: О.: {fatherName} | М.: {motherName}";
         }
 
         /// <summary>Показатели обновляются каждый кадр, пока карточка открыта.</summary>
@@ -167,7 +199,7 @@ namespace CatWorld.Cats
             if (_traitsPlaceholder == null)
                 return;
 
-            int count = _cat.InnateTraits.Count + _cat.AcquiredTraits.Count;
+            var count = _cat.InnateTraits.Count + _cat.AcquiredTraits.Count;
             _traitsPlaceholder.text = count == 0
                 ? "Черты характера: пока нет"
                 : $"Черты характера: {count}";
@@ -182,10 +214,10 @@ namespace CatWorld.Cats
         /// <summary>Вписывает нативный размер иконки в лимит высоты, сохраняя пропорции.</summary>
         private static void ClampIconHeight(RectTransform rect, float maxHeight)
         {
-            Vector2 size = rect.sizeDelta;
+            var size = rect.sizeDelta;
             if (size.y <= maxHeight || size.y <= 0f)
                 return;
-            float k = maxHeight / size.y;
+            var k = maxHeight / size.y;
             rect.sizeDelta = new Vector2(size.x * k, maxHeight);
         }
 

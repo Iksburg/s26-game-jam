@@ -6,6 +6,8 @@ namespace Cats.Genome.Abstract
 {
     public interface ICatGenome
     {
+        public string Id { get; }
+        public string Name { get; }
         Sex Sex { get; }
         Color Color { get; }
         IReadOnlyList<ICatGenome> Parents { get; }

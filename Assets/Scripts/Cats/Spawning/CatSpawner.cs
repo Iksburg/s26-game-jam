@@ -29,11 +29,11 @@ namespace Cats.Spawning
             var cat = Instantiate(_catPrefab, spawnPoint, Quaternion.identity);
             var furColor = _palette != null ? _palette.GetRandomColor() : Color.white;
 
-            // 1. Создаем чистую C# модель генома для базового (первого) кота
+            // 1. Создаем чистую C# модель генома для базового (первого) кота с передачей имени
             ICatGenome initialGenome = sex switch
             {
-                Sex.Male => new CatGenomeMale(furColor, _defaultSexStrength),
-                Sex.Female => new CatGenomeFemale(furColor, _defaultSexStrength),
+                Sex.Male => new CatGenomeMale(catName, furColor, _defaultSexStrength),
+                Sex.Female => new CatGenomeFemale(catName, furColor, _defaultSexStrength),
                 _ => throw new System.ArgumentOutOfRangeException(nameof(sex), "Неизвестный пол при спавне")
             };
 

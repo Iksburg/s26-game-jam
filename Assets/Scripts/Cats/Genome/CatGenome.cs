@@ -8,6 +8,8 @@ namespace Cats.Genome
 {
     public abstract class CatGenome : ICatGenome
     {
+        public string Id { get; }
+        public string Name { get; }
         public Sex Sex { get; }
         public Color Color { get; }
         
@@ -19,22 +21,24 @@ namespace Cats.Genome
         public IReadOnlyList<ICatGenome> Children => _children;
 
         // Конструктор для создания котёнка от родителей
-        protected CatGenome(Sex sex, CatGenomeMale father, CatGenomeFemale mother, float fatherColorStrength, float motherColorStrength)
+        protected CatGenome(string name, Sex sex, CatGenomeMale father, CatGenomeFemale mother, float fatherColorStrength, float motherColorStrength)
         {
+            Id = Guid.NewGuid().ToString();
+            Name = name;
             Sex = sex;
             _parents = new ICatGenome[] { father, mother };
             
-            // Бизнес-логика: цвет рассчитывается автоматически при рождении
             Color = CalculateChildColor(father.Color, fatherColorStrength, mother.Color, motherColorStrength);
             
-            // Сразу регистрируем связь у родителей
             father.AddChild(this);
             mother.AddChild(this);
         }
 
         // Конструктор для "базовых" котов (генерация на старте игры)
-        protected CatGenome(Sex sex, Color color)
+        protected CatGenome(string name, Sex sex, Color color)
         {
+            Id = Guid.NewGuid().ToString();
+            Name = name;
             Sex = sex;
             Color = color;
             _parents = Array.Empty<ICatGenome>();

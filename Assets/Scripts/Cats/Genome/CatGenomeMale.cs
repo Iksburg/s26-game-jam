@@ -8,14 +8,14 @@ namespace Cats.Genome
         public float MaleStrength { get; }
 
         // Конструктор для котёнка-мальчика
-        public CatGenomeMale(CatGenomeMale father, CatGenomeFemale mother, float maleStrength) 
-            : base(Sex.Male, father, mother, father.MaleStrength, mother.FemaleStrength)
+        public CatGenomeMale(string name, CatGenomeMale father, CatGenomeFemale mother, float maleStrength) 
+            : base(name, Sex.Male, father, mother, father.MaleStrength, mother.FemaleStrength)
         {
             MaleStrength = maleStrength; // Можем передать мутировавшую силу или среднее родителей
         }
 
         // Конструктор для начального кота-самца
-        public CatGenomeMale(Color color, float maleStrength) : base(Sex.Male, color)
+        public CatGenomeMale(string name, Color color, float maleStrength) : base(name, Sex.Male, color)
         {
             MaleStrength = maleStrength;
         }

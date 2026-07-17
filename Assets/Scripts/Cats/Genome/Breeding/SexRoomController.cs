@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using Cats.Genome.Abstract;
 using CatWorld.Cats;
 using Cats.Spawning;
 using UnityEngine;
@@ -78,18 +79,17 @@ namespace Cats.Genome.Breeding
             // 1. Заранее рассчитываем пол и гены ребенка через бизнес-логику (до открытия UI)
             var fatherGenome = (CatGenomeMale)_parentMale.Genome;
             var motherGenome = (CatGenomeFemale)_parentFemale.Genome;
-            var childGenome = CatBreedingService.Breed(fatherGenome, motherGenome);
-
+            
+            var preCalculatedSex = CatGenome.CalculateChildSex(fatherGenome.MaleStrength, motherGenome.FemaleStrength);
+            
             // 2. Открываем панель именования, скрывая выбор пола, и передаем Callback
-            spawnCatPanel.OpenForBreeding(childGenome.Sex, (chosenName) =>
+            spawnCatPanel.OpenForBreeding(preCalculatedSex, (chosenName) =>
             {
-                // Этот код выполнится ТОЛЬКО тогда, когда игрок введет имя в UI и нажмет Confirm:
-                // Теперь мы делегируем создание спавнеру, чтобы у котенка включился визуал и логика Wander!
+                // Генерируем геном уже с финальным именем, которое ввел игрок
+                var childGenome = CatBreedingService.Breed(chosenName, fatherGenome, motherGenome);
+    
                 var child = catSpawner.SpawnChildCat(chosenName, childGenome);
-                
-                Debug.Log($"[SexRoom] Спавнер успешно создал генетического котенка {child.Name} на поле!");
-
-                ClearRoom(); // Очищаем комнату после успешного спавна
+                ClearRoom();
             });
 
             _breedingCoroutine = null;
