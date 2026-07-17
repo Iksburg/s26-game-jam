@@ -238,7 +238,7 @@ Animator:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 481044569332887195}
-  m_Enabled: 0
+  m_Enabled: 1
   m_Avatar: {fileID: 0}
   m_Controller: {fileID: 9100000, guid: bec412b7914770f49a71796884b8f22d, type: 2}
   m_CullingMode: 0
@@ -259,9 +259,12 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 481044569332887195}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9486897725c6b8349886977db6fb1506, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CatWorld.Cats.CatAnimationController
   _animator: {fileID: -4886987000156828160}
+  _kittenController: {fileID: 9100000, guid: bec412b7914770f49a71796884b8f22d, type: 2}
+  _adultController: {fileID: 9100000, guid: e6200f04cf8d49348a1ae70f748ac60a, type: 2}
+  _seniorController: {fileID: 9100000, guid: e6200f04cf8d49348a1ae70f748ac60a, type: 2}

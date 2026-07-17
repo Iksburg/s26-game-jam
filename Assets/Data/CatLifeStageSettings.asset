@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: CatLifeStageSettings
   m_EditorClassIdentifier: Assembly-CSharp::CatWorld.Cats.CatLifeStageSettings
   _kitten:
-    duration: 20
+    duration: 30
     scale: 0.62
     speedMultiplier: 1.2
     hungerRateMultiplier: 1.2
@@ -21,7 +21,7 @@ MonoBehaviour:
     canBreed: 0
     sleepFrequencyMultiplier: 1
   _adult:
-    duration: 20
+    duration: 30
     scale: 0.42
     speedMultiplier: 1
     hungerRateMultiplier: 1
