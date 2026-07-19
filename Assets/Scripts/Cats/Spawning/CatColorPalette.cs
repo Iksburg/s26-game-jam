@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace CatWorld.Cats
+namespace Cats.Spawning
 {
     /// <summary>
     /// Заданный список цветов шерсти, из которого случайно выбирается окрас
