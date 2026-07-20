@@ -94,7 +94,7 @@ namespace CatWorld.Cats.Editor
             return button;
         }
 
-        private static SettingsPanel BuildSettingsPanel(GameObject canvasGo)
+        internal static SettingsPanel BuildSettingsPanel(GameObject canvasGo)
         {
             // Затемнение поверх меню
             var dim = CatSpawnSceneBuilder.CreateUiObject("SettingsPanel", canvasGo.transform);
