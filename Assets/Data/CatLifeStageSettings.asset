@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: CatLifeStageSettings
   m_EditorClassIdentifier: Assembly-CSharp::CatWorld.Cats.CatLifeStageSettings
   _kitten:
-    duration: 30
-    scale: 0.62
+    duration: 60
+    scale: 0.45
     speedMultiplier: 1.2
     hungerRateMultiplier: 1.2
     thirstRateMultiplier: 1.2

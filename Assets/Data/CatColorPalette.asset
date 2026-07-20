@@ -14,7 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CatWorld.Cats.CatColorPalette
   _colors:
   - {r: 1, g: 1, b: 1, a: 1}
-  - {r: 0.15, g: 0.15, b: 0.15, a: 1}
   - {r: 0.91, g: 0.52, b: 0.23, a: 1}
   - {r: 0.55, g: 0.55, b: 0.55, a: 1}
   - {r: 0.95, g: 0.89, b: 0.77, a: 1}

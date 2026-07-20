@@ -284,6 +284,117 @@ namespace CatWorld.Cats.Editor
             Debug.Log("[CatSpawnSceneBuilder] Контроллеры анимации по стадиям подключены к префабу.");
         }
 
+        /// <summary>
+        /// Дополняет СУЩЕСТВУЮЩУЮ сцену CatSpawn внутриигровым меню: кнопка «Меню»
+        /// в правом верхнем углу, модальное окно паузы и окно настроек (то же,
+        /// что в главном меню). Камера и FarmBounds не изменяются.
+        /// </summary>
+        [MenuItem("Tools/CatWorld/Upgrade CatSpawn Scene (In-Game Menu)")]
+        public static void UpgradeForInGameMenu()
+        {
+            _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+
+            var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            EnsureInGameMenu();
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            AssetDatabase.SaveAssets();
+            Debug.Log("[CatSpawnSceneBuilder] Готово: внутриигровое меню добавлено в сцену CatSpawn.");
+        }
+
+        /// <summary>Создаёт внутриигровое меню в активной сцене (идемпотентно).</summary>
+        private static void EnsureInGameMenu()
+        {
+            var canvas = Object.FindFirstObjectByType<Canvas>();
+            if (canvas == null)
+            {
+                Debug.LogError("[CatSpawnSceneBuilder] В сцене нет Canvas.");
+                return;
+            }
+
+            // Компонент живёт на активном Canvas — по нему и проверяем повторный запуск
+            // (GameObject.Find не находит выключенные объекты, поэтому не годится).
+            if (canvas.GetComponent<InGameMenuPanel>() != null)
+                return;
+
+            // --- Кнопка «Меню» в правом верхнем углу ---
+            var openButton = CreateButton(canvas.transform, "MenuButton", "Меню", new Vector2(160f, 64f));
+            var openRect = openButton.GetComponent<RectTransform>();
+            openRect.anchorMin = openRect.anchorMax = new Vector2(1f, 1f);
+            openRect.pivot = new Vector2(1f, 1f);
+            openRect.anchoredPosition = new Vector2(-20f, -20f);
+
+            // Счётчик запасов занимал тот же угол — сдвигаем его под кнопку.
+            var resourcesLabel = GameObject.Find("ResourcesLabel");
+            if (resourcesLabel != null)
+            {
+                var labelRect = resourcesLabel.GetComponent<RectTransform>();
+                if (labelRect != null)
+                    labelRect.anchoredPosition = new Vector2(-20f, -100f);
+            }
+
+            // --- Затемнение на весь экран: приглушает ферму и ловит клики ---
+            var dim = CreateUiObject("InGameMenuPanel", canvas.transform);
+            StretchFull(dim.GetComponent<RectTransform>());
+            var dimImage = dim.AddComponent<Image>();
+            dimImage.color = new Color(0f, 0f, 0f, 0.6f);
+
+            // --- Окно по центру, меньшая часть экрана ---
+            var window = CreateUiObject("Window", dim.transform);
+            var windowRect = window.GetComponent<RectTransform>();
+            windowRect.sizeDelta = new Vector2(520f, 440f);
+            var windowImage = window.AddComponent<Image>();
+            windowImage.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Background.psd");
+            windowImage.type = Image.Type.Sliced;
+            windowImage.color = new Color(0.96f, 0.93f, 0.85f);
+
+            var title = CreateText(window.transform, "Title", "Меню", 44,
+                new Color(0.25f, 0.2f, 0.15f));
+            var titleRect = title.rectTransform;
+            titleRect.anchorMin = titleRect.anchorMax = new Vector2(0.5f, 1f);
+            titleRect.pivot = new Vector2(0.5f, 1f);
+            titleRect.sizeDelta = new Vector2(300f, 56f);
+            titleRect.anchoredPosition = new Vector2(0f, -26f);
+
+            // Крестик в правом верхнем углу окна
+            var closeButton = CreateButton(window.transform, "CloseButton", "X", new Vector2(44f, 44f));
+            var closeRect = closeButton.GetComponent<RectTransform>();
+            closeRect.anchorMin = closeRect.anchorMax = new Vector2(1f, 1f);
+            closeRect.pivot = new Vector2(1f, 1f);
+            closeRect.anchoredPosition = new Vector2(-10f, -10f);
+
+            // Колонка кнопок: частые действия выше, выход из игры — последним
+            var saveButton = CreateMenuRowButton(window.transform, "SaveButton", "Сохранить игру", 60f);
+            var settingsButton = CreateMenuRowButton(window.transform, "SettingsButton", "Настройки", -30f);
+            var mainMenuButton = CreateMenuRowButton(window.transform, "MainMenuButton", "Главное меню", -120f);
+
+            // Строка статуса — отклик на заглушку сохранения
+            var status = CreateText(window.transform, "StatusLabel", string.Empty, 26,
+                new Color(0.45f, 0.40f, 0.32f));
+            var statusRect = status.rectTransform;
+            statusRect.anchorMin = statusRect.anchorMax = new Vector2(0.5f, 0.5f);
+            statusRect.sizeDelta = new Vector2(460f, 36f);
+            statusRect.anchoredPosition = new Vector2(0f, -185f);
+
+            // --- Настройки: та же панель, что в главном меню ---
+            // Создаётся после меню, поэтому рисуется поверх него.
+            var settingsPanel = MainMenuSceneBuilder.BuildSettingsPanel(canvas.gameObject);
+
+            var menuPanel = canvas.gameObject.AddComponent<InGameMenuPanel>();
+            menuPanel.Configure(dim, openButton, closeButton, saveButton,
+                settingsButton, mainMenuButton, status, settingsPanel);
+            dim.SetActive(false);
+        }
+
+        private static Button CreateMenuRowButton(Transform parent, string name, string label, float y)
+        {
+            var button = CreateButton(parent, name, label, new Vector2(360f, 74f));
+            var rect = button.GetComponent<RectTransform>();
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = new Vector2(0f, y);
+            return button;
+        }
+
         /// <summary>Создаёт UI карточки в активной сцене (идемпотентно).</summary>
         public static void EnsureCardObjects()
         {
@@ -519,7 +630,7 @@ namespace CatWorld.Cats.Editor
             rect.anchoredPosition = anchoredPosition;
         }
 
-        private static void StretchFull(RectTransform rect)
+        internal static void StretchFull(RectTransform rect)
         {
             rect.anchorMin = Vector2.zero;
             rect.anchorMax = Vector2.one;
@@ -692,7 +803,7 @@ namespace CatWorld.Cats.Editor
 
         // ---------- UI-хелперы ----------
 
-        private static GameObject CreateUiObject(string name, Transform parent)
+        internal static GameObject CreateUiObject(string name, Transform parent)
         {
             var go = new GameObject(name, typeof(RectTransform));
             go.layer = LayerMask.NameToLayer("UI");
@@ -701,7 +812,7 @@ namespace CatWorld.Cats.Editor
             return go;
         }
 
-        private static Text CreateText(Transform parent, string name, string value,
+        internal static Text CreateText(Transform parent, string name, string value,
             int fontSize, Color color)
         {
             var go = CreateUiObject(name, parent);
@@ -714,7 +825,7 @@ namespace CatWorld.Cats.Editor
             return text;
         }
 
-        private static Button CreateButton(Transform parent, string name, string label, Vector2 size)
+        internal static Button CreateButton(Transform parent, string name, string label, Vector2 size)
         {
             var go = CreateUiObject(name, parent);
             go.GetComponent<RectTransform>().sizeDelta = size;
@@ -765,7 +876,7 @@ namespace CatWorld.Cats.Editor
             return input;
         }
 
-        private static Toggle CreateToggle(Transform parent, string name, string label,
+        internal static Toggle CreateToggle(Transform parent, string name, string label,
             Vector2 anchoredPos, ToggleGroup group)
         {
             var go = CreateUiObject(name, parent);
@@ -804,7 +915,7 @@ namespace CatWorld.Cats.Editor
             return toggle;
         }
 
-        private static void StretchWithPadding(RectTransform rect, float horizontal, float vertical)
+        internal static void StretchWithPadding(RectTransform rect, float horizontal, float vertical)
         {
             rect.anchorMin = Vector2.zero;
             rect.anchorMax = Vector2.one;
@@ -812,7 +923,7 @@ namespace CatWorld.Cats.Editor
             rect.offsetMax = new Vector2(-horizontal, -vertical);
         }
 
-        private static void EnsureFolder(string path)
+        internal static void EnsureFolder(string path)
         {
             if (AssetDatabase.IsValidFolder(path))
                 return;
