@@ -2851,6 +2851,7 @@ MonoBehaviour:
   _satietyLabel: {fileID: 997212424}
   _waterLabel: {fileID: 131595119}
   _cleanlinessLabel: {fileID: 1221319540}
+  _parentsLabel: {fileID: 0}
   _traitsContainer: {fileID: 1199062382}
   _traitsPlaceholder: {fileID: 535488670}
   _familyTreeButton: {fileID: 686495234}
@@ -3940,8 +3941,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e70a5065bce7dbb4b92510a64e00dc7e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CatWorld.Cats.FamilyTreePanel
-  _root: {fileID: 1477778621}
-  _closeButton: {fileID: 198296996}
+  root: {fileID: 1477778621}
+  closeButton: {fileID: 198296996}
+  minZoom: 0.3
+  maxZoom: 2
+  zoomSensitivity: 0.1
+  nodeSpacing: {x: 200, y: 150}
+  lineWidth: 4
+  lineColor: {r: 0.45, g: 0.4, b: 0.35, a: 0.7}
 --- !u!224 &1477778623
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4853,6 +4860,7 @@ MonoBehaviour:
   _catPrefab: {fileID: 5496063082718347507, guid: 75bbe80b44c8f564eab3ee1a47c46d21, type: 3}
   _bounds: {fileID: 1505319543}
   _initialStage: 0
+  _defaultSexStrength: 10
 --- !u!4 &1932471640
 Transform:
   m_ObjectHideFlags: 0

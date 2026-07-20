@@ -3,45 +3,76 @@ using UnityEngine;
 namespace CatWorld.Cats
 {
     /// <summary>
-    /// Проигрывает Idle-анимацию (Animator/CatController) только когда кот
-    /// бездействует. Пока кот идёт или ест/пьёт — Animator выключается, и
-    /// анимация не воспроизводится. Работает с контроллером, где есть лишь
-    /// зациклённое Idle-состояние, без правки графа Animator.
+    /// Связывает состояние кота с Animator: подставляет контроллер под стадию
+    /// роста и отдаёт в параметр Speed фактическую скорость перемещения —
+    /// по ней контроллер переключает Idle ↔ Walk.
+    /// Во время еды/питья Animator выключается: анимация не проигрывается.
     /// </summary>
     [RequireComponent(typeof(Cat))]
     [RequireComponent(typeof(Animator))]
     public class CatAnimationController : MonoBehaviour
     {
+        /// <summary>Имя float-параметра в Animator-контроллерах.</summary>
+        public const string SpeedParameter = "Speed";
+
+        /// <summary>Ниже этого значения скорость считается нулевой (защита от дрожания float).</summary>
+        public const float SpeedThreshold = 0.01f;
+
         [SerializeField] private Animator _animator;
 
-        [Header("Контроллеры по стадиям")]
+        [Header("Контроллеры по стадиям (назначаются в инспекторе)")]
         [SerializeField] private RuntimeAnimatorController _kittenController;
         [SerializeField] private RuntimeAnimatorController _adultController;
         [SerializeField] private RuntimeAnimatorController _seniorController;
 
+        private static readonly int SpeedHash = Animator.StringToHash(SpeedParameter);
+
         private Cat _cat;
         private bool? _isPlaying;
+        private bool _hasSpeedParameter;
+        private Vector3 _lastPosition;
 
         private void Awake()
         {
             _cat = GetComponent<Cat>();
             if (_animator == null)
                 _animator = GetComponent<Animator>();
+            _lastPosition = transform.position;
+            RefreshSpeedParameter();
         }
 
-        private void Update()
+        /// <summary>
+        /// Считаем в LateUpdate: к этому моменту перемещение за кадр уже выполнено
+        /// системой движения, поэтому скорость получается корректной.
+        /// </summary>
+        private void LateUpdate()
         {
-            // Анимация не должна проигрываться при движении и приёме еды/воды.
-            var activity = _cat.CurrentActivity;
-            bool shouldPlay = activity != CatActivity.Walking && activity != CatActivity.Eating;
+            float speed = MeasureSpeed();
 
-            if (_isPlaying == shouldPlay)
-                return;
+            // Пока кот ест/пьёт, анимация не проигрывается (Animator выключен).
+            // При ходьбе Animator остаётся включённым — играет Walk-анимация.
+            bool shouldPlay = _cat.CurrentActivity != CatActivity.Eating;
+            if (_isPlaying != shouldPlay)
+            {
+                _isPlaying = shouldPlay;
+                _animator.enabled = shouldPlay;
+            }
 
-            _isPlaying = shouldPlay;
-            // Выключенный Animator замирает на текущем кадре и ничего не проигрывает;
-            // при возврате к бездействию воспроизведение возобновляется.
-            _animator.enabled = shouldPlay;
+            // Скорость отдаём всегда: контроллер сам решает, когда Idle, когда Walk.
+            if (_hasSpeedParameter)
+                _animator.SetFloat(SpeedHash, speed);
+        }
+
+        /// <summary>Фактическая скорость по смещению за кадр (в юнитах/сек).</summary>
+        private float MeasureSpeed()
+        {
+            Vector3 position = transform.position;
+            float deltaTime = Time.deltaTime;
+            float speed = deltaTime > 0f
+                ? (position - _lastPosition).magnitude / deltaTime
+                : 0f;
+            _lastPosition = position;
+            return speed;
         }
 
         /// <summary>
@@ -66,6 +97,29 @@ namespace CatWorld.Cats
                 return;
 
             _animator.runtimeAnimatorController = controller;
+            RefreshSpeedParameter(); // у нового контроллера свой набор параметров
+        }
+
+        /// <summary>
+        /// Проверяет, есть ли в текущем контроллере параметр Speed. Без этого
+        /// SetFloat на контроллере без параметра сыпал бы предупреждения
+        /// (например, если у взрослого кота ещё нет Walk-анимации).
+        /// </summary>
+        private void RefreshSpeedParameter()
+        {
+            _hasSpeedParameter = false;
+            if (_animator == null || _animator.runtimeAnimatorController == null)
+                return;
+
+            foreach (var parameter in _animator.parameters)
+            {
+                if (parameter.type == AnimatorControllerParameterType.Float &&
+                    parameter.nameHash == SpeedHash)
+                {
+                    _hasSpeedParameter = true;
+                    return;
+                }
+            }
         }
     }
 }
