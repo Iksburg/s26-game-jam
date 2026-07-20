@@ -519,7 +519,7 @@ namespace CatWorld.Cats.Editor
             rect.anchoredPosition = anchoredPosition;
         }
 
-        private static void StretchFull(RectTransform rect)
+        internal static void StretchFull(RectTransform rect)
         {
             rect.anchorMin = Vector2.zero;
             rect.anchorMax = Vector2.one;
@@ -692,7 +692,7 @@ namespace CatWorld.Cats.Editor
 
         // ---------- UI-хелперы ----------
 
-        private static GameObject CreateUiObject(string name, Transform parent)
+        internal static GameObject CreateUiObject(string name, Transform parent)
         {
             var go = new GameObject(name, typeof(RectTransform));
             go.layer = LayerMask.NameToLayer("UI");
@@ -701,7 +701,7 @@ namespace CatWorld.Cats.Editor
             return go;
         }
 
-        private static Text CreateText(Transform parent, string name, string value,
+        internal static Text CreateText(Transform parent, string name, string value,
             int fontSize, Color color)
         {
             var go = CreateUiObject(name, parent);
@@ -714,7 +714,7 @@ namespace CatWorld.Cats.Editor
             return text;
         }
 
-        private static Button CreateButton(Transform parent, string name, string label, Vector2 size)
+        internal static Button CreateButton(Transform parent, string name, string label, Vector2 size)
         {
             var go = CreateUiObject(name, parent);
             go.GetComponent<RectTransform>().sizeDelta = size;
@@ -765,7 +765,7 @@ namespace CatWorld.Cats.Editor
             return input;
         }
 
-        private static Toggle CreateToggle(Transform parent, string name, string label,
+        internal static Toggle CreateToggle(Transform parent, string name, string label,
             Vector2 anchoredPos, ToggleGroup group)
         {
             var go = CreateUiObject(name, parent);
@@ -804,7 +804,7 @@ namespace CatWorld.Cats.Editor
             return toggle;
         }
 
-        private static void StretchWithPadding(RectTransform rect, float horizontal, float vertical)
+        internal static void StretchWithPadding(RectTransform rect, float horizontal, float vertical)
         {
             rect.anchorMin = Vector2.zero;
             rect.anchorMax = Vector2.one;
@@ -812,7 +812,7 @@ namespace CatWorld.Cats.Editor
             rect.offsetMax = new Vector2(-horizontal, -vertical);
         }
 
-        private static void EnsureFolder(string path)
+        internal static void EnsureFolder(string path)
         {
             if (AssetDatabase.IsValidFolder(path))
                 return;
