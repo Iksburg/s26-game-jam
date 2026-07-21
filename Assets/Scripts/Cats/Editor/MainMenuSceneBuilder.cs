@@ -16,7 +16,7 @@ namespace CatWorld.Cats.Editor
     /// </summary>
     public static class MainMenuSceneBuilder
     {
-        private const string ScenePath = "Assets/Scenes/MainMenu.unity";
+        private const string ScenePath = "Assets/Scenes/Main/MainMenu.unity";
         private const string GameScenePath = "Assets/Scenes/Dima/CatSpawn.unity";
 
         [MenuItem("Tools/CatWorld/Build Main Menu Scene")]
@@ -77,12 +77,87 @@ namespace CatWorld.Cats.Editor
             var menu = canvasGo.AddComponent<MainMenuController>();
             menu.Configure(newGame, continueBtn, settingsBtn, quitBtn, settingsPanel);
 
-            CatSpawnSceneBuilder.EnsureFolder("Assets/Scenes");
+            CatSpawnSceneBuilder.EnsureFolder("Assets/Scenes/Main");
             EditorSceneManager.SaveScene(scene, ScenePath);
 
             AddScenesToBuildSettings();
             AssetDatabase.SaveAssets();
             Debug.Log($"[MainMenuSceneBuilder] Готово: {ScenePath} (+ сцены в Build Settings).");
+        }
+
+        /// <summary>
+        /// Пересобирает панель настроек в обеих сценах, добавляя блок
+        /// автосохранения, и заводит AutoSaveService в игровой сцене.
+        /// Пересобирается только сама панель — остальная сцена (фон, камера,
+        /// FarmBounds, ручные правки) не трогается.
+        /// </summary>
+        [MenuItem("Tools/CatWorld/Upgrade Settings (Autosave)")]
+        public static void UpgradeSettingsForAutoSave()
+        {
+            // --- Главное меню ---
+            var menuScene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            var menuCanvas = Object.FindFirstObjectByType<Canvas>();
+            if (menuCanvas != null)
+            {
+                var panel = RebuildSettingsPanel(menuCanvas.gameObject);
+                var controller = menuCanvas.GetComponent<MainMenuController>();
+                if (controller != null)
+                    SetReference(controller, "_settingsPanel", panel);
+            }
+            EditorSceneManager.MarkSceneDirty(menuScene);
+            EditorSceneManager.SaveScene(menuScene);
+
+            // --- Игровая сцена ---
+            var gameScene = EditorSceneManager.OpenScene(GameScenePath, OpenSceneMode.Single);
+            var gameCanvas = Object.FindFirstObjectByType<Canvas>();
+            if (gameCanvas != null)
+            {
+                var panel = RebuildSettingsPanel(gameCanvas.gameObject);
+                var inGameMenu = gameCanvas.GetComponent<InGameMenuPanel>();
+                if (inGameMenu != null)
+                    SetReference(inGameMenu, "_settingsPanel", panel);
+            }
+
+            var autoSave = Object.FindFirstObjectByType<AutoSaveService>();
+            if (autoSave == null)
+            {
+                var go = new GameObject("AutoSaveService");
+                autoSave = go.AddComponent<AutoSaveService>();
+            }
+            autoSave.Configure(Object.FindFirstObjectByType<GameSaveService>());
+
+            EditorSceneManager.MarkSceneDirty(gameScene);
+            EditorSceneManager.SaveScene(gameScene);
+            AssetDatabase.SaveAssets();
+            Debug.Log("[MainMenuSceneBuilder] Готово: настройки автосохранения добавлены в обе сцены.");
+        }
+
+        /// <summary>
+        /// Заменяет панель настроек новой. Старая удаляется целиком (компонент
+        /// с Canvas и дочерний объект окна), новая создаётся последней — поэтому
+        /// рисуется поверх остального UI.
+        /// </summary>
+        private static SettingsPanel RebuildSettingsPanel(GameObject canvasGo)
+        {
+            var oldPanel = canvasGo.GetComponent<SettingsPanel>();
+            if (oldPanel != null)
+                Object.DestroyImmediate(oldPanel);
+
+            var oldRoot = canvasGo.transform.Find("SettingsPanel");
+            if (oldRoot != null)
+                Object.DestroyImmediate(oldRoot.gameObject);
+
+            return BuildSettingsPanel(canvasGo);
+        }
+
+        private static void SetReference(Object target, string propertyName, Object value)
+        {
+            var so = new SerializedObject(target);
+            var property = so.FindProperty(propertyName);
+            if (property == null)
+                return;
+            property.objectReferenceValue = value;
+            so.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static Button CreateMenuButton(Transform parent, string name, string label, float y)
@@ -104,7 +179,7 @@ namespace CatWorld.Cats.Editor
 
             var window = CatSpawnSceneBuilder.CreateUiObject("Window", dim.transform);
             var windowRect = window.GetComponent<RectTransform>();
-            windowRect.sizeDelta = new Vector2(640f, 520f);
+            windowRect.sizeDelta = new Vector2(640f, 680f);
             var windowImage = window.AddComponent<Image>();
             windowImage.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Background.psd");
             windowImage.type = Image.Type.Sliced;
@@ -118,9 +193,40 @@ namespace CatWorld.Cats.Editor
             titleRect.sizeDelta = new Vector2(400f, 60f);
             titleRect.anchoredPosition = new Vector2(0f, -30f);
 
-            CreateSettingsRow(window.transform, "Music", "Музыка", -150f,
+            // --- Секция автосохранения (над громкостью) ---
+            var autoSaveToggle = CatSpawnSceneBuilder.CreateToggle(window.transform, "AutoSaveToggle",
+                "Автосохранение", Vector2.zero, null);
+            PlaceLeft(autoSaveToggle.GetComponent<RectTransform>(), new Vector2(40f, -105f),
+                new Vector2(360f, 44f));
+
+            var intervalLabel = CatSpawnSceneBuilder.CreateText(window.transform, "IntervalLabel",
+                "Интервал:", 30, new Color(0.28f, 0.24f, 0.18f));
+            intervalLabel.alignment = TextAnchor.MiddleLeft;
+            PlaceLeft(intervalLabel.rectTransform, new Vector2(40f, -165f), new Vector2(150f, 40f));
+
+            // Радиокнопки: ToggleGroup гарантирует, что активен ровно один интервал.
+            var intervalGroup = window.AddComponent<ToggleGroup>();
+            intervalGroup.allowSwitchOff = false;
+            var interval1 = CreateIntervalToggle(window.transform, "Interval1Toggle", "1 мин", 190f, intervalGroup);
+            var interval5 = CreateIntervalToggle(window.transform, "Interval5Toggle", "5 мин", 330f, intervalGroup);
+            var interval15 = CreateIntervalToggle(window.transform, "Interval15Toggle", "15 мин", 470f, intervalGroup);
+
+            // Разделитель отбивает новую секцию от блока звука
+            var separator = CatSpawnSceneBuilder.CreateUiObject("Separator", window.transform);
+            var separatorRect = separator.GetComponent<RectTransform>();
+            separatorRect.anchorMin = new Vector2(0f, 1f);
+            separatorRect.anchorMax = new Vector2(1f, 1f);
+            separatorRect.pivot = new Vector2(0.5f, 0.5f);
+            separatorRect.offsetMin = new Vector2(40f, 0f);
+            separatorRect.offsetMax = new Vector2(-40f, 0f);
+            separatorRect.sizeDelta = new Vector2(separatorRect.sizeDelta.x, 2f);
+            separatorRect.anchoredPosition = new Vector2(0f, -215f);
+            separator.AddComponent<Image>().color = new Color(0.75f, 0.70f, 0.60f);
+
+            // --- Громкость ---
+            CreateSettingsRow(window.transform, "Music", "Музыка", -275f,
                 out Slider musicSlider, out Text musicValue);
-            CreateSettingsRow(window.transform, "Sound", "Звуки", -230f,
+            CreateSettingsRow(window.transform, "Sound", "Звуки", -350f,
                 out Slider soundSlider, out Text soundValue);
 
             var fullscreen = CatSpawnSceneBuilder.CreateToggle(window.transform, "FullscreenToggle",
@@ -129,7 +235,7 @@ namespace CatWorld.Cats.Editor
             fullscreenRect.anchorMin = fullscreenRect.anchorMax = new Vector2(0.5f, 1f);
             fullscreenRect.pivot = new Vector2(0.5f, 0.5f);
             fullscreenRect.sizeDelta = new Vector2(300f, 44f);
-            fullscreenRect.anchoredPosition = new Vector2(0f, -310f);
+            fullscreenRect.anchoredPosition = new Vector2(0f, -440f);
 
             var back = CatSpawnSceneBuilder.CreateButton(window.transform, "BackButton", "Назад",
                 new Vector2(240f, 70f));
@@ -140,9 +246,28 @@ namespace CatWorld.Cats.Editor
 
             // Компонент на активном Canvas, окно (dim) — выключенный root.
             var panel = canvasGo.AddComponent<SettingsPanel>();
-            panel.Configure(dim, musicSlider, soundSlider, musicValue, soundValue, fullscreen, back);
+            panel.Configure(dim, musicSlider, soundSlider, musicValue, soundValue, fullscreen, back,
+                autoSaveToggle, interval1, interval5, interval15, intervalLabel);
             dim.SetActive(false);
             return panel;
+        }
+
+        /// <summary>Компактный переключатель интервала автосохранения.</summary>
+        private static Toggle CreateIntervalToggle(Transform parent, string name, string label,
+            float x, ToggleGroup group)
+        {
+            var toggle = CatSpawnSceneBuilder.CreateToggle(parent, name, label, Vector2.zero, group);
+            PlaceLeft(toggle.GetComponent<RectTransform>(), new Vector2(x, -165f), new Vector2(135f, 40f));
+            return toggle;
+        }
+
+        /// <summary>Ставит элемент от левого верхнего угла окна.</summary>
+        private static void PlaceLeft(RectTransform rect, Vector2 anchoredPosition, Vector2 size)
+        {
+            rect.anchorMin = rect.anchorMax = new Vector2(0f, 1f);
+            rect.pivot = new Vector2(0f, 0.5f);
+            rect.sizeDelta = size;
+            rect.anchoredPosition = anchoredPosition;
         }
 
         private static void CreateSettingsRow(Transform parent, string name, string label, float y,

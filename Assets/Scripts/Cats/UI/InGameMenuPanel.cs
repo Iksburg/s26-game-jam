@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -20,8 +21,13 @@ namespace CatWorld.Cats
         [SerializeField] private Button _mainMenuButton;
         [SerializeField] private Text _statusLabel;
         [SerializeField] private SettingsPanel _settingsPanel;
+        [SerializeField] private GameSaveService _saveService;
         [Tooltip("Имя сцены главного меню (должна быть в Build Settings).")]
         [SerializeField] private string _mainMenuSceneName = "MainMenu";
+        [Tooltip("Сколько секунд показывать сообщение о сохранении.")]
+        [SerializeField] private float _statusDuration = 5f;
+
+        private Coroutine _statusRoutine;
 
         public bool IsOpen => _root != null && _root.activeSelf;
 
@@ -39,7 +45,7 @@ namespace CatWorld.Cats
         /// <summary>Заполняется билдером сцены (editor wiring).</summary>
         public void Configure(GameObject root, Button openButton, Button closeButton,
             Button saveButton, Button settingsButton, Button mainMenuButton,
-            Text statusLabel, SettingsPanel settingsPanel)
+            Text statusLabel, SettingsPanel settingsPanel, GameSaveService saveService)
         {
             _root = root;
             _openButton = openButton;
@@ -49,6 +55,7 @@ namespace CatWorld.Cats
             _mainMenuButton = mainMenuButton;
             _statusLabel = statusLabel;
             _settingsPanel = settingsPanel;
+            _saveService = saveService;
         }
 
         public void Open()
@@ -65,15 +72,41 @@ namespace CatWorld.Cats
             Time.timeScale = 1f;
         }
 
-        /// <summary>
-        /// Заглушка сохранения: реальная запись появится в задаче сохранений
-        /// (писать под ключом SaveData.SaveKey, тогда оживёт и «Продолжить»).
-        /// </summary>
         private void SaveGame()
         {
-            Debug.Log("[InGameMenu] Сохранение игры — заглушка, система сохранений ещё не реализована.");
+            if (_saveService == null)
+                _saveService = FindFirstObjectByType<GameSaveService>();
+
+            if (_saveService == null)
+            {
+                ShowStatus("Не удалось сохранить игру");
+                Debug.LogError("[InGameMenu] В сцене нет GameSaveService.");
+                return;
+            }
+
+            _saveService.SaveGame();
+            ShowStatus("Игра сохранена");
+        }
+
+        private void ShowStatus(string message)
+        {
+            if (_statusLabel == null)
+                return;
+
+            _statusLabel.text = message;
+            if (_statusRoutine != null)
+                StopCoroutine(_statusRoutine);
+            _statusRoutine = StartCoroutine(ClearStatusAfterDelay());
+        }
+
+        private IEnumerator ClearStatusAfterDelay()
+        {
+            // Realtime: меню держит игру на паузе (timeScale = 0),
+            // и обычный WaitForSeconds никогда бы не досчитал.
+            yield return new WaitForSecondsRealtime(_statusDuration);
             if (_statusLabel != null)
-                _statusLabel.text = "Сохранение появится позже";
+                _statusLabel.text = string.Empty;
+            _statusRoutine = null;
         }
 
         private void OpenSettings()

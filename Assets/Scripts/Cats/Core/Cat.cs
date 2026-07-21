@@ -85,6 +85,34 @@ namespace CatWorld.Cats
             }
         }
 
+        /// <summary>
+        /// Восстанавливает кота из сохранения: в отличие от Initialize, берёт Id
+        /// из сейва и не сбрасывает потребности в 100%.
+        /// </summary>
+        public void RestoreFromSave(CatSaveData data, ICatGenome genome)
+        {
+            _id = data.catId;
+            _name = data.name;
+            _stage = data.stage;
+            Genome = genome;
+
+            _satiety = Mathf.Clamp(data.satiety, MinNeed, MaxNeed);
+            _water = Mathf.Clamp(data.water, MinNeed, MaxNeed);
+            _cleanliness = Mathf.Clamp(data.cleanliness, MinNeed, MaxNeed);
+
+            _currentActivity = data.activity;
+            _farmStatus = data.farmStatus;
+
+            _innateTraits = new List<CatTrait>(data.innateTraits);
+            _acquiredTraits = new List<CatTrait>(data.acquiredTraits);
+
+            var spriteRenderer = GetComponent<SpriteRenderer>();
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.color = Genome.Color;
+            }
+        }
+
         /// <summary>Создаёт GameObject с компонентом Cat и инициализирует его.</summary>
         public static Cat Create(string catName, LifeStage stage, ICatGenome genome)
         {

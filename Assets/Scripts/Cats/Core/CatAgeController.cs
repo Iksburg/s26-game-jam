@@ -24,6 +24,27 @@ namespace CatWorld.Cats
         private CatAnimationController _animation;
         private float _stageTimer;
         private float _leaveTimer;
+        private bool _hasRestoredTimers;
+        private float _restoredStageTimer;
+        private float _restoredLeaveTimer;
+
+        /// <summary>Текущий остаток таймера стадии — сохраняется как «возраст».</summary>
+        public float StageTimer => _stageTimer;
+
+        /// <summary>Остаток до следующей проверки ухода пожилого кота.</summary>
+        public float LeaveTimer => _leaveTimer;
+
+        /// <summary>
+        /// Восстанавливает прогресс взросления из сейва. Вызывается сразу после
+        /// Instantiate — Start() отработает позже и применит эти значения поверх
+        /// свежих таймеров стадии.
+        /// </summary>
+        public void RestoreTimers(float stageTimer, float leaveTimer)
+        {
+            _hasRestoredTimers = true;
+            _restoredStageTimer = stageTimer;
+            _restoredLeaveTimer = leaveTimer;
+        }
 
         private void Awake()
         {
@@ -38,6 +59,14 @@ namespace CatWorld.Cats
         {
             // Применяем эффекты стартовой стадии (кот мог заспавниться любой).
             EnterStage(_cat.Stage, invokeEvent: false);
+
+            // Загруженный кот продолжает взрослеть с того места, где сохранился.
+            if (_hasRestoredTimers)
+            {
+                _stageTimer = _restoredStageTimer;
+                _leaveTimer = _restoredLeaveTimer;
+                _hasRestoredTimers = false;
+            }
         }
 
         /// <summary>Заполняется билдером префаба (editor wiring).</summary>

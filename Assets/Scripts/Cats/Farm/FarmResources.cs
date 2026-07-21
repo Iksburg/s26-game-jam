@@ -19,6 +19,14 @@ namespace CatWorld.Cats
         public int Food => _food;
         public int Water => _water;
 
+        /// <summary>Восстанавливает запасы из сохранения.</summary>
+        public void RestoreResources(int food, int water)
+        {
+            _food = Mathf.Max(0, food);
+            _water = Mathf.Max(0, water);
+            Changed?.Invoke();
+        }
+
         /// <summary>Списывает 1 корм. false — корм закончился.</summary>
         public bool TryConsumeFood()
         {

@@ -81,6 +81,34 @@ namespace Cats.Spawning
             return cat;
         }
 
+        /// <summary>
+        /// Создаёт кота из сохранения: в отличие от обычного спавна, ставит его
+        /// в сохранённую точку и восстанавливает состояние вместо генерации нового.
+        /// </summary>
+        public Cat SpawnRestoredCat(CatSaveData data, ICatGenome genome)
+        {
+            var position = new Vector3(data.positionX, data.positionY, 0f);
+            var cat = Instantiate(_catPrefab, position, Quaternion.identity);
+
+            cat.RestoreFromSave(data, genome);
+            cat.name = $"Cat_{data.name}";
+
+            var view = cat.GetComponent<CatView>();
+            if (view != null)
+                view.ApplyColor(genome.Color);
+
+            var wander = cat.GetComponent<CatWanderController>();
+            if (wander != null)
+                wander.SetBounds(_bounds);
+
+            // Таймеры взросления применятся в Start() контроллера возраста.
+            var age = cat.GetComponent<CatAgeController>();
+            if (age != null)
+                age.RestoreTimers(data.stageTimer, data.leaveTimer);
+
+            return cat;
+        }
+
         /// <summary>Заполняется билдером сцены (editor-time wiring).</summary>
         public void Configure(CatColorPalette palette, Cat catPrefab, FarmBounds bounds)
         {
