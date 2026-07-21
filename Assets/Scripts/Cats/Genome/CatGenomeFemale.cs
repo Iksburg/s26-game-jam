@@ -19,5 +19,12 @@ namespace Cats.Genome
         {
             FemaleStrength = femaleStrength;
         }
+
+        // Конструктор восстановления из сохранения (Id берётся из сейва)
+        public CatGenomeFemale(string id, string name, Color color, float femaleStrength)
+            : base(id, name, Sex.Female, color)
+        {
+            FemaleStrength = femaleStrength;
+        }
     }
 }

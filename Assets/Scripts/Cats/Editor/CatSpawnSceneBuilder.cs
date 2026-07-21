@@ -380,10 +380,53 @@ namespace CatWorld.Cats.Editor
             // Создаётся после меню, поэтому рисуется поверх него.
             var settingsPanel = MainMenuSceneBuilder.BuildSettingsPanel(canvas.gameObject);
 
+            var saveService = EnsureSaveService();
+
             var menuPanel = canvas.gameObject.AddComponent<InGameMenuPanel>();
             menuPanel.Configure(dim, openButton, closeButton, saveButton,
-                settingsButton, mainMenuButton, status, settingsPanel);
+                settingsButton, mainMenuButton, status, settingsPanel, saveService);
             dim.SetActive(false);
+        }
+
+        /// <summary>
+        /// Создаёт (или находит) сервис сохранений и связывает его со спавнером
+        /// и запасами фермы. Отдельный метод, чтобы его можно было вызывать
+        /// и из апгрейда сцены под сохранения.
+        /// </summary>
+        [MenuItem("Tools/CatWorld/Upgrade CatSpawn Scene (Save System)")]
+        public static void UpgradeForSaveSystem()
+        {
+            var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            var service = EnsureSaveService();
+
+            // Досвязываем сервис с уже существующим меню, если оно собрано раньше.
+            var canvas = Object.FindFirstObjectByType<Canvas>();
+            var menu = canvas != null ? canvas.GetComponent<InGameMenuPanel>() : null;
+            if (menu != null)
+            {
+                var so = new SerializedObject(menu);
+                so.FindProperty("_saveService").objectReferenceValue = service;
+                so.ApplyModifiedPropertiesWithoutUndo();
+            }
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            AssetDatabase.SaveAssets();
+            Debug.Log("[CatSpawnSceneBuilder] Готово: система сохранений подключена к сцене CatSpawn.");
+        }
+
+        private static GameSaveService EnsureSaveService()
+        {
+            var service = Object.FindFirstObjectByType<GameSaveService>();
+            if (service == null)
+            {
+                var go = new GameObject("GameSaveService");
+                service = go.AddComponent<GameSaveService>();
+            }
+
+            service.Configure(Object.FindFirstObjectByType<CatSpawner>(),
+                Object.FindFirstObjectByType<FarmResources>());
+            return service;
         }
 
         private static Button CreateMenuRowButton(Transform parent, string name, string label, float y)

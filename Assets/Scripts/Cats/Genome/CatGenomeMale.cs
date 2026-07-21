@@ -19,5 +19,12 @@ namespace Cats.Genome
         {
             MaleStrength = maleStrength;
         }
+
+        // Конструктор восстановления из сохранения (Id берётся из сейва)
+        public CatGenomeMale(string id, string name, Color color, float maleStrength)
+            : base(id, name, Sex.Male, color)
+        {
+            MaleStrength = maleStrength;
+        }
     }
 }

@@ -15,7 +15,7 @@ namespace Cats.Genome
         
         // Инкапсуляция: списки закрыты на чтение извне через IReadOnlyList
         private readonly List<ICatGenome> _children = new();
-        private readonly ICatGenome[] _parents;
+        private readonly List<ICatGenome> _parents = new();
 
         public IReadOnlyList<ICatGenome> Parents => _parents;
         public IReadOnlyList<ICatGenome> Children => _children;
@@ -26,10 +26,11 @@ namespace Cats.Genome
             Id = Guid.NewGuid().ToString();
             Name = name;
             Sex = sex;
-            _parents = new ICatGenome[] { father, mother };
-            
+            _parents.Add(father);
+            _parents.Add(mother);
+
             Color = CalculateChildColor(father.Color, fatherColorStrength, mother.Color, motherColorStrength);
-            
+
             father.AddChild(this);
             mother.AddChild(this);
         }
@@ -41,7 +42,34 @@ namespace Cats.Genome
             Name = name;
             Sex = sex;
             Color = color;
-            _parents = Array.Empty<ICatGenome>();
+        }
+
+        /// <summary>
+        /// Конструктор восстановления из сохранения: Id и цвет берутся из сейва,
+        /// а не генерируются, иначе после загрузки развалятся связи родословной.
+        /// Родители подключаются отдельно через RestoreParent — на момент создания
+        /// генома они могут быть ещё не восстановлены.
+        /// </summary>
+        protected CatGenome(string id, string name, Sex sex, Color color)
+        {
+            if (string.IsNullOrEmpty(id)) throw new ArgumentException("Пустой Id при восстановлении генома", nameof(id));
+            Id = id;
+            Name = name;
+            Sex = sex;
+            Color = color;
+        }
+
+        /// <summary>
+        /// Восстанавливает связь с родителем при загрузке сейва (без обратного
+        /// AddChild — список детей восстанавливается отдельно по своим Id).
+        /// </summary>
+        public void RestoreParent(ICatGenome parent)
+        {
+            if (parent == null) throw new ArgumentNullException(nameof(parent));
+            if (!_parents.Contains(parent))
+            {
+                _parents.Add(parent);
+            }
         }
 
         public void AddChild(ICatGenome child)

@@ -46,6 +46,9 @@ namespace CatWorld.Cats
 
         private void StartNewGame()
         {
+            // Явно сбрасываем флаг: иначе новая игра подхватила бы сейв,
+            // если до этого нажимали «Продолжить».
+            SaveSystem.LoadRequested = false;
             SceneManager.LoadScene(_gameSceneName);
         }
 
@@ -53,8 +56,9 @@ namespace CatWorld.Cats
         {
             if (!SaveData.HasSave)
                 return;
-            // Загрузка данных сейва подключится в задаче сохранений;
-            // пока просто входим в игровую сцену.
+
+            // Сцена сама восстановит состояние: GameSaveService прочитает флаг.
+            SaveSystem.LoadRequested = true;
             SceneManager.LoadScene(_gameSceneName);
         }
 
