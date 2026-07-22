@@ -22,8 +22,22 @@ namespace Cats.Spawning
         [Tooltip("Сила пола по умолчанию для покупных котов.")]
         [SerializeField] private float _defaultSexStrength = 10f;
 
+        /// <summary>
+        /// Создаёт купленного кота: стадия «котёнок» и случайный цвет из палитры
+        /// (по правилам экономики покупки).
+        /// </summary>
+        public Cat SpawnPurchasedCat(Sex sex, string catName)
+        {
+            return SpawnCat(sex, catName, LifeStage.Kitten);
+        }
+
         /// <summary>Создаёт кота с заданными полом и именем; остальное — по правилам спавна.</summary>
         public Cat SpawnCat(Sex sex, string catName)
+        {
+            return SpawnCat(sex, catName, _initialStage);
+        }
+
+        private Cat SpawnCat(Sex sex, string catName, LifeStage stage)
         {
             var spawnPoint = _bounds != null ? (Vector3)_bounds.GetRandomPointInside() : Vector3.zero;
             var cat = Instantiate(_catPrefab, spawnPoint, Quaternion.identity);
@@ -38,7 +52,7 @@ namespace Cats.Spawning
             };
 
             // 2. Инициализируем кота, передавая обновленные параметры и готовую модель генома
-            cat.Initialize(catName, _initialStage, initialGenome);
+            cat.Initialize(catName, stage, initialGenome);
             cat.name = $"Cat_{catName}";
 
             var view = cat.GetComponent<CatView>();
