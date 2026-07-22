@@ -27,6 +27,10 @@ namespace CatWorld.Cats
         // Делегат, который выполнится при нажатии Confirm в режиме разведения
         private Action<string> _onNameConfirmedCallback;
 
+        // Делегат режима покупки из магазина: возвращает выбранный пол и имя,
+        // чтобы деньги списывались только после подтверждения.
+        private Action<Sex, string> _onPurchaseConfirmedCallback;
+
         private void Awake()
         {
             _openButton.onClick.AddListener(() => OpenForPurchase()); // Старое поведение покупки
@@ -41,7 +45,8 @@ namespace CatWorld.Cats
         private void OpenForPurchase()
         {
             _onNameConfirmedCallback = null; // Сбрасываем кастомный колбэк разведения
-            
+            _onPurchaseConfirmedCallback = null;
+
             _nameInput.text = string.Empty;
             _maleToggle.gameObject.SetActive(true);
             _femaleToggle.gameObject.SetActive(true);
@@ -51,10 +56,29 @@ namespace CatWorld.Cats
             SetupCommonOpenState();
         }
 
+        /// <summary>
+        /// Открытие из магазина: игрок выбирает пол и имя, а покупкой (списанием
+        /// мяукоинов и созданием котёнка) занимается вызывающая сторона.
+        /// </summary>
+        public void OpenForShopPurchase(Action<Sex, string> onPurchaseConfirmed)
+        {
+            _onNameConfirmedCallback = null;
+            _onPurchaseConfirmedCallback = onPurchaseConfirmed;
+
+            _nameInput.text = string.Empty;
+            _maleToggle.gameObject.SetActive(true);
+            _femaleToggle.gameObject.SetActive(true);
+            _maleToggle.isOn = true;
+            _femaleToggle.isOn = false;
+
+            SetupCommonOpenState();
+        }
+
         /// <summary> Публичный метод для комнаты разведения. Пол кота уже известен и заблокирован в UI. </summary>
         public void OpenForBreeding(Sex fixedSex, Action<string> onNameConfirmed)
         {
             _onNameConfirmedCallback = onNameConfirmed; // Запоминаем, кому вернуть имя кота
+            _onPurchaseConfirmedCallback = null;
 
             _nameInput.text = string.Empty;
             
@@ -89,8 +113,14 @@ namespace CatWorld.Cats
             if (catName.Length > MaxNameLength)
                 catName = catName.Substring(0, MaxNameLength);
 
+            // Если панель была открыта магазином — покупку выполнит магазин:
+            if (_onPurchaseConfirmedCallback != null)
+            {
+                Sex chosenSex = _maleToggle.isOn ? Sex.Male : Sex.Female;
+                _onPurchaseConfirmedCallback.Invoke(chosenSex, catName);
+            }
             // Если панель была открыта комнатой разведения:
-            if (_onNameConfirmedCallback != null)
+            else if (_onNameConfirmedCallback != null)
             {
                 _onNameConfirmedCallback.Invoke(catName); // Передаем имя обратно в SexRoomController
             }
