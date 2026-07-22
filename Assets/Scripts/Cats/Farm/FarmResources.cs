@@ -19,6 +19,24 @@ namespace CatWorld.Cats
         public int Food => _food;
         public int Water => _water;
 
+        /// <summary>Пополняет запас корма (покупка в магазине).</summary>
+        public void AddFood(int amount)
+        {
+            if (amount <= 0)
+                return;
+            _food += amount;
+            Changed?.Invoke();
+        }
+
+        /// <summary>Пополняет запас воды (покупка в магазине).</summary>
+        public void AddWater(int amount)
+        {
+            if (amount <= 0)
+                return;
+            _water += amount;
+            Changed?.Invoke();
+        }
+
         /// <summary>Восстанавливает запасы из сохранения.</summary>
         public void RestoreResources(int food, int water)
         {

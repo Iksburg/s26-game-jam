@@ -15,6 +15,7 @@ namespace CatWorld.Cats
     {
         [SerializeField] private CatSpawner _spawner;
         [SerializeField] private FarmResources _resources;
+        [SerializeField] private PlayerWallet _wallet;
 
         private void Start()
         {
@@ -22,6 +23,8 @@ namespace CatWorld.Cats
                 _spawner = FindFirstObjectByType<CatSpawner>();
             if (_resources == null)
                 _resources = FindFirstObjectByType<FarmResources>();
+            if (_wallet == null)
+                _wallet = FindFirstObjectByType<PlayerWallet>();
 
             if (!SaveSystem.LoadRequested)
                 return;
@@ -32,10 +35,11 @@ namespace CatWorld.Cats
         }
 
         /// <summary>Заполняется билдером сцены (editor wiring).</summary>
-        public void Configure(CatSpawner spawner, FarmResources resources)
+        public void Configure(CatSpawner spawner, FarmResources resources, PlayerWallet wallet)
         {
             _spawner = spawner;
             _resources = resources;
+            _wallet = wallet;
         }
 
         /// <summary>Сохраняет текущее состояние фермы.</summary>
@@ -45,7 +49,7 @@ namespace CatWorld.Cats
             {
                 food = _resources != null ? _resources.Food : 0,
                 water = _resources != null ? _resources.Water : 0,
-                meowCoins = 0 // экономика ещё не реализована — поле-задел
+                meowCoins = _wallet != null ? _wallet.Coins : 0
             };
 
             foreach (var cat in FindObjectsByType<Cat>(FindObjectsSortMode.None))
@@ -126,6 +130,8 @@ namespace CatWorld.Cats
 
             if (_resources != null)
                 _resources.RestoreResources(data.food, data.water);
+            if (_wallet != null)
+                _wallet.RestoreCoins(data.meowCoins);
 
             // Проход 1: создаём геномы без связей — родителя может ещё не быть.
             var genomesById = new Dictionary<string, CatGenome>();

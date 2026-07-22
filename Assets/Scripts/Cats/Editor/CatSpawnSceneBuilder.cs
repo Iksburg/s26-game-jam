@@ -19,6 +19,7 @@ namespace CatWorld.Cats.Editor
     {
         private const string PalettePath = "Assets/Data/CatColorPalette.asset";
         private const string LifeStageSettingsPath = "Assets/Data/CatLifeStageSettings.asset";
+        private const string EconomySettingsPath = "Assets/Data/EconomySettings.asset";
         private const string CatPrefabPath = "Assets/Prefabs/Cat.prefab";
         private const string ScenePath = "Assets/Scenes/Dima/CatSpawn.unity";
 
@@ -425,8 +426,54 @@ namespace CatWorld.Cats.Editor
             }
 
             service.Configure(Object.FindFirstObjectByType<CatSpawner>(),
-                Object.FindFirstObjectByType<FarmResources>());
+                Object.FindFirstObjectByType<FarmResources>(),
+                Object.FindFirstObjectByType<PlayerWallet>());
             return service;
+        }
+
+        /// <summary>
+        /// Добавляет в сцену CatSpawn экономику: ассет настроек, кошелёк игрока
+        /// и сервис операций. UI магазина — отдельная задача.
+        /// Камера и FarmBounds не изменяются.
+        /// </summary>
+        [MenuItem("Tools/CatWorld/Upgrade CatSpawn Scene (Economy)")]
+        public static void UpgradeForEconomy()
+        {
+            var settings = AssetDatabase.LoadAssetAtPath<EconomySettings>(EconomySettingsPath);
+            if (settings == null)
+            {
+                EnsureFolder("Assets/Data");
+                settings = ScriptableObject.CreateInstance<EconomySettings>();
+                AssetDatabase.CreateAsset(settings, EconomySettingsPath);
+            }
+
+            var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+
+            var wallet = Object.FindFirstObjectByType<PlayerWallet>();
+            if (wallet == null)
+            {
+                var go = new GameObject("PlayerWallet");
+                wallet = go.AddComponent<PlayerWallet>();
+            }
+            wallet.Configure(settings);
+
+            var economy = Object.FindFirstObjectByType<EconomyService>();
+            if (economy == null)
+            {
+                var go = new GameObject("EconomyService");
+                economy = go.AddComponent<EconomyService>();
+            }
+            economy.Configure(settings, wallet,
+                Object.FindFirstObjectByType<FarmResources>(),
+                Object.FindFirstObjectByType<CatSpawner>());
+
+            // Кошелёк должен попадать в сейв вместе с остальным состоянием.
+            EnsureSaveService();
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            AssetDatabase.SaveAssets();
+            Debug.Log("[CatSpawnSceneBuilder] Готово: экономика подключена к сцене CatSpawn.");
         }
 
         private static Button CreateMenuRowButton(Transform parent, string name, string label, float y)
