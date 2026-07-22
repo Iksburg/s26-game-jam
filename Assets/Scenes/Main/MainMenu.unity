@@ -629,7 +629,7 @@ MonoBehaviour:
   _settingsButton: {fileID: 69676022}
   _quitButton: {fileID: 1927760977}
   _settingsPanel: {fileID: 317257375}
-  _gameSceneName: CatSpawn
+  _gameSceneName: MainLevel
 --- !u!114 &317257371
 MonoBehaviour:
   m_ObjectHideFlags: 0
