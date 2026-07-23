@@ -18,6 +18,7 @@ GameObject:
   - component: {fileID: 2273041772249831530}
   - component: {fileID: -4886987000156828160}
   - component: {fileID: 2713219104889606159}
+  - component: {fileID: 3864526225443306968}
   m_Layer: 0
   m_Name: Cat
   m_TagString: Untagged
@@ -131,17 +132,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CatWorld.Cats.Cat
   _id: 
   _name: 
-  _sex: 0
   _stage: 0
-  _furColor: {r: 1, g: 1, b: 1, a: 1}
   _innateTraits: 
   _acquiredTraits: 
   _satiety: 100
   _water: 100
   _cleanliness: 100
-  _parentId1: 
-  _parentId2: 
-  _childrenIds: []
   _currentActivity: 0
   _farmStatus: 0
   _canBreed: 0
@@ -187,8 +183,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d8121a39e528e8848be5b537d51a698c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CatWorld.Cats.CatNeedsController
-  _satietyDecay: 1
-  _waterDecay: 1.2
+  _satietyDecay: 0.5
+  _waterDecay: 0.6
   _cleanlinessDecay: 0.3
   _hungerThreshold: 60
   _thirstThreshold: 75
@@ -268,3 +264,17 @@ MonoBehaviour:
   _kittenController: {fileID: 9100000, guid: bec412b7914770f49a71796884b8f22d, type: 2}
   _adultController: {fileID: 9100000, guid: e6200f04cf8d49348a1ae70f748ac60a, type: 2}
   _seniorController: {fileID: 9100000, guid: e6200f04cf8d49348a1ae70f748ac60a, type: 2}
+--- !u!114 &3864526225443306968
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 481044569332887195}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d2d2dda486630f5458c487949712077a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CatWorld.Cats.CatPoopController
+  _poopPrefab: {fileID: 3568127681901784695, guid: c8e43c1ba6547eb4f929e667c8249f84, type: 3}
+  _poopDelay: 10
