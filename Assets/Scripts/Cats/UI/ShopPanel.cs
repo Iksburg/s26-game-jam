@@ -222,15 +222,15 @@ namespace CatWorld.Cats
                 _spawnedCards.Add(card);
             }
 
-            if (_sellEmptyLabel != null)
-                _sellEmptyLabel.gameObject.SetActive(cats.Length == 0);
+            RefreshEmptyLabel();
         }
 
-        private void SellCat(Cat cat)
+        private void SellCat(ShopCatCard card)
         {
-            if (_economy == null || cat == null)
+            if (_economy == null || card == null || card.Cat == null)
                 return;
 
+            var cat = card.Cat;
             string catName = cat.Name;
             int price = _economy.SellCat(cat);
             SetStatus(price > 0
@@ -238,7 +238,19 @@ namespace CatWorld.Cats
                 : $"«{catName}» отдан новым хозяевам");
 
             RefreshWallet();
-            RebuildSellList(); // кот удалён — список надо пересобрать
+
+            // Удаляем именно эту карточку сразу: Destroy кота в EconomyService
+            // отложен до конца кадра, поэтому пересбор через FindObjectsByType
+            // ещё видел бы проданного кота.
+            _spawnedCards.Remove(card);
+            Destroy(card.gameObject);
+            RefreshEmptyLabel();
+        }
+
+        private void RefreshEmptyLabel()
+        {
+            if (_sellEmptyLabel != null)
+                _sellEmptyLabel.gameObject.SetActive(_spawnedCards.Count == 0);
         }
 
         // ---------- Обновление подписей ----------
