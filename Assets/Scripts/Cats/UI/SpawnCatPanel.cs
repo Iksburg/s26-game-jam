@@ -94,7 +94,6 @@ namespace CatWorld.Cats
         private void SetupCommonOpenState()
         {
             _panelRoot.SetActive(true);
-            Time.timeScale = 0f; // игра на паузе, пока игрок не назовёт кота
             RefreshConfirmButton();
         }
 

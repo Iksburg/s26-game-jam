@@ -1,15 +1,15 @@
+// TutorialManager.cs
 using System.Collections;
 using System.Collections.Generic;
+using JetBrains.Annotations;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 namespace CatWorld.Cats.Tutorial
 {
-    /// <summary>
-    /// Главный менеджер системы обучения: управляет последовательностью шагов,
-    /// показывает подсказки и подсвечивает элементы.
-    /// </summary>
-    public class TutorialManager : MonoBehaviour
+    public class TutorialManager : MonoBehaviour, IEndDragHandler 
     {
         public TutorialHintPanel _hintPanel;
         public TutorialHighlight _highlighter;
@@ -20,6 +20,13 @@ namespace CatWorld.Cats.Tutorial
         private bool _isRunning = false;
         private bool _tutorialCompleted = false;
 
+        // === НОВОЕ: Храним активный слушатель и кнопку для гарантированной очистки ===
+        private UnityAction _activeClickListener;
+        private Button _currentActiveButton;
+        
+        private List<Button> _disabledButtons = new List<Button>();
+        private Image _currentDropTarget; 
+
         private void Awake()
         {
             if (_highlighter == null)
@@ -28,7 +35,6 @@ namespace CatWorld.Cats.Tutorial
                 highlightObj.transform.SetParent(transform);
                 _highlighter = highlightObj.AddComponent<TutorialHighlight>();
             }
-
             if (_hintPanel == null)
             {
                 Debug.LogWarning("TutorialHintPanel не назначена в инспекторе!");
@@ -51,48 +57,49 @@ namespace CatWorld.Cats.Tutorial
             _startTutorialOnAwake = false;
         }
 
-        /// <summary>Добавить шаг обучения.</summary>
         public void AddStep(string hintText, Button targetButton = null, bool waitForClick = false, float duration = 0f)
         {
             _steps.Add(new TutorialStep(hintText, targetButton, waitForClick, duration));
         }
 
-        /// <summary>Добавить шаг обучения с целевым изображением.</summary>
         public void AddStep(string hintText, Image targetImage, float duration = 0f)
         {
-            _steps.Add(new TutorialStep(hintText, targetImage, duration));
+            _steps.Add(new TutorialStep(hintText, targetImage, duration, false));
         }
 
-        /// <summary>Запустить обучение.</summary>
+        public void AddStep(string hintText, Image targetImage, float duration = 0f, bool waitForDrop = false)
+        {
+            _steps.Add(new TutorialStep(hintText, targetImage, duration, waitForDrop));
+        }
+
         public void StartTutorial()
         {
-            if (_isRunning)
-                return;
-
+            if (_isRunning) return;
             _isRunning = true;
             _currentStepIndex = 0;
-
             if (_steps.Count == 0)
             {
                 Debug.LogWarning("Нет шагов обучения!");
                 _isRunning = false;
                 return;
             }
-
             ShowStep(_currentStepIndex);
         }
 
-        /// <summary>Остановить обучение.</summary>
         public void StopTutorial()
         {
             _isRunning = false;
+            _currentDropTarget = null;
+            
+            // === ОБЯЗАТЕЛЬНО очищаем активный слушатель ===
+            CleanupActiveListener();
+            
+            UnlockAllButtons();
             _highlighter.RemoveHighlight();
-            if (_hintPanel != null)
-                _hintPanel.HideHint();
+            if (_hintPanel != null) _hintPanel.HideHint();
             StopAllCoroutines();
         }
 
-        /// <summary>Пропустить обучение и отметить как завершённое.</summary>
         public void SkipTutorial()
         {
             StopTutorial();
@@ -101,31 +108,45 @@ namespace CatWorld.Cats.Tutorial
             PlayerPrefs.Save();
         }
 
-        /// <summary>Перейти к следующему шагу.</summary>
         public void NextStep()
         {
-            if (!_isRunning)
-                return;
-
+            if (!_isRunning) return;
+            
+            // Очищаем слушатель ТЕКУЩЕГО шага ПЕРЕД переходом
+            CleanupActiveListener();
+            
             _currentStepIndex++;
-
             if (_currentStepIndex >= _steps.Count)
             {
                 CompleteTutorial();
                 return;
             }
-
             ShowStep(_currentStepIndex);
+        }
+
+        /// <summary>
+        /// Гарантированно удаляет активный слушатель клика и разблокирует кнопки.
+        /// Вызывается при каждом переходе между шагами.
+        /// </summary>
+        private void CleanupActiveListener()
+        {
+            if (_currentActiveButton != null && _activeClickListener != null)
+            {
+                _currentActiveButton.onClick.RemoveListener(_activeClickListener);
+                _currentActiveButton = null;
+                _activeClickListener = null;
+            }
+            UnlockAllButtons();
         }
 
         private void ShowStep(int stepIndex)
         {
-            if (stepIndex < 0 || stepIndex >= _steps.Count)
-                return;
+            if (stepIndex < 0 || stepIndex >= _steps.Count) return;
 
             TutorialStep step = _steps[stepIndex];
+            _currentDropTarget = null;
 
-            // Подсвечиваем целевой элемент
+            // Подсвечиваем элемент
             if (step.TargetImage != null)
                 _highlighter.HighlightElement(step.TargetImage);
 
@@ -133,60 +154,74 @@ namespace CatWorld.Cats.Tutorial
             if (_hintPanel != null)
             {
                 RectTransform targetRect = null;
-                if (step.TargetButton != null)
-                    targetRect = step.TargetButton.GetComponent<RectTransform>();
-                else if (step.TargetImage != null)
-                    targetRect = step.TargetImage.GetComponent<RectTransform>();
-
-                _hintPanel.ShowHint(step.HintText, targetRect, !step.WaitForButtonClick);
+                if (step.TargetButton != null) targetRect = step.TargetButton.GetComponent<RectTransform>();
+                else if (step.TargetImage != null) targetRect = step.TargetImage.GetComponent<RectTransform>();
+        
+                bool showNextButton = !step.WaitForButtonClick && !step.WaitForDropEvent;
+                _hintPanel.ShowHint(step.HintText, targetRect, showNextButton);
             }
 
-            // Если нужно ждать клика по кнопке
+            // === БЛОКИРОВКА ТОЛЬКО ДЛЯ ШАГОВ С WaitForButtonClick ===
             if (step.WaitForButtonClick && step.TargetButton != null)
             {
-                // Используем временный делегат для отслеживания
-                System.Action onClickListener = null;
+                LockAllButtonsExcept(step.TargetButton);
+                
+                UnityAction onClickListener = null;
                 onClickListener = () =>
                 {
-                    step.TargetButton.onClick.RemoveListener(onClickListener);
+                    // Удаляем слушатель сразу при клике, чтобы не сработал дважды
+                    CleanupActiveListener();
                     NextStep();
                 };
+                
+                // Сохраняем ссылки для последующей очистки
+                _activeClickListener = onClickListener;
+                _currentActiveButton = step.TargetButton;
                 
                 step.TargetButton.onClick.AddListener(onClickListener);
                 StartCoroutine(WaitForButtonClickTimeout(step.TargetButton, onClickListener));
             }
-            // Если установлена длительность отображения
+            // Логика ожидания ДРОПА
+            else if (step.WaitForDropEvent && step.TargetImage != null)
+            {
+                _currentDropTarget = step.TargetImage;
+            }
+            // Логика ожидания ВРЕМЕНИ
             else if (step.DisplayDuration > 0f)
             {
                 StartCoroutine(WaitForDuration(step.DisplayDuration));
             }
         }
 
-        private IEnumerator WaitForButtonClickTimeout(Button button, System.Action listener)
+        public void OnEndDrag(PointerEventData eventData)
         {
-            // Ждём нажатия кнопки (максимум 30 секунд)
+            if (!_isRunning || _currentDropTarget == null) return;
+
+            if (eventData.pointerEnter == _currentDropTarget.gameObject)
+            {
+                Debug.Log("Tutorial Drop detected!");
+                _currentDropTarget = null;
+                NextStep();
+            }
+        }
+
+        private IEnumerator WaitForButtonClickTimeout(Button button, UnityAction listener)
+        {
             float elapsed = 0f;
             while (elapsed < 30f && _isRunning)
             {
-                elapsed += Time.deltaTime;
+                // === ИСПОЛЬЗУЕМ unscaledDeltaTime НА СЛУЧАЙ ПАУЗЫ ИГРЫ ===
+                elapsed += Time.unscaledDeltaTime;
                 yield return null;
             }
-
-            if (button != null)
-                button.onClick.RemoveListener(listener);
-
-            if (_isRunning && elapsed >= 30f)
-            {
-                // Если времени истекло, переходим к следующему шагу автоматически
-                NextStep();
-            }
+            if (button != null) button.onClick.RemoveListener(listener);
+            if (_isRunning && elapsed >= 30f) NextStep();
         }
 
         private IEnumerator WaitForDuration(float duration)
         {
             yield return new WaitForSeconds(duration);
-            if (_isRunning)
-                NextStep();
+            if (_isRunning) NextStep();
         }
 
         private void CompleteTutorial()
@@ -195,14 +230,40 @@ namespace CatWorld.Cats.Tutorial
             _tutorialCompleted = true;
             PlayerPrefs.SetInt("TutorialCompleted", 1);
             PlayerPrefs.Save();
-
             Debug.Log("Обучение завершено!");
         }
 
-        /// <summary>Проверить, уже ли было обучение.</summary>
-        public static bool HasCompletedTutorial => PlayerPrefs.HasKey("TutorialCompleted");
+        private void LockAllButtonsExcept([CanBeNull] Button targetButton)
+        {
+            UnlockAllButtons();
 
-        /// <summary>Сбросить статус обучения для переиграния.</summary>
+            var allButtons = FindObjectsOfType<Button>(true);
+    
+            foreach (var btn in allButtons)
+            {
+                if (btn == targetButton || 
+                    (_hintPanel != null && btn.transform.IsChildOf(_hintPanel.transform)))
+                    continue;
+
+                if (btn.interactable)
+                {
+                    btn.interactable = false;
+                    _disabledButtons.Add(btn);
+                }
+            }
+        }
+
+        private void UnlockAllButtons()
+        {
+            foreach (var btn in _disabledButtons)
+            {
+                if (btn != null)
+                    btn.interactable = true;
+            }
+            _disabledButtons.Clear();
+        }
+
+        public static bool HasCompletedTutorial => PlayerPrefs.HasKey("TutorialCompleted");
         public static void ResetTutorial()
         {
             PlayerPrefs.DeleteKey("TutorialCompleted");
