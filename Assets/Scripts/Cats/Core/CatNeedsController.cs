@@ -31,6 +31,9 @@ namespace CatWorld.Cats
         [Header("Отладка")]
         [SerializeField] private float _logInterval = 10f;
 
+        /// <summary>Кот успешно поел (только еда, не вода). Слушает CatPoopController.</summary>
+        public event System.Action Ate;
+
         private Cat _cat;
         private CatWanderController _wander;
         private FarmResources _resources;
@@ -169,6 +172,7 @@ namespace CatWorld.Cats
                 {
                     _cat.SetSatiety(Cat.MaxNeed);
                     _cat.OnFed(); // <-- Вызываем метод получения черты после еды
+                    Ate?.Invoke(); // еда → позже появится какашка
                 }
                 else
                 {

@@ -39,6 +39,14 @@ namespace Cats.Genome.Breeding
         {
             if (!cat) throw new ArgumentNullException(nameof(cat));
 
+            // Размножаться могут только взрослые коты: флаг CanBreed выставляет
+            // CatAgeController по настройкам стадии (у котят и пожилых он выключен).
+            if (!cat.CanBreed)
+            {
+                Debug.Log($"[SexRoom] Кот «{cat.Name}» ({cat.Stage}) не может размножаться — не добавлен в комнату.");
+                return;
+            }
+
             // Проверяем пол кота через его геном
             switch (cat.Genome)
             {
