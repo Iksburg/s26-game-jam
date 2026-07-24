@@ -17,7 +17,10 @@ namespace CatWorld.Cats
         [SerializeField] private Button _sellButton;
 
         private Cat _cat;
-        private Action<Cat> _onSell;
+        private Action<ShopCatCard> _onSell;
+
+        /// <summary>Кот, привязанный к карточке.</summary>
+        public Cat Cat => _cat;
 
         /// <summary>Заполняется билдером сцены (editor wiring).</summary>
         public void Configure(Image icon, Text nameLabel, Text priceLabel, Button sellButton)
@@ -29,7 +32,7 @@ namespace CatWorld.Cats
         }
 
         /// <summary>Наполняет карточку данными конкретного кота.</summary>
-        public void Bind(Cat cat, int price, Action<Cat> onSell)
+        public void Bind(Cat cat, int price, Action<ShopCatCard> onSell)
         {
             _cat = cat;
             _onSell = onSell;
@@ -59,7 +62,7 @@ namespace CatWorld.Cats
         private void HandleSell()
         {
             if (_cat != null)
-                _onSell?.Invoke(_cat);
+                _onSell?.Invoke(this);
         }
     }
 }
