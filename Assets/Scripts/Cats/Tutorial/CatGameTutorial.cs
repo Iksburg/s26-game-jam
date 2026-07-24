@@ -25,6 +25,9 @@ namespace CatWorld.Cats.Tutorial
         [Tooltip("Кнопка подтверждения покупки")]
         public Button confirmBuyButton;
         
+        [Tooltip("Кнопка подтверждения имени рожденного котенка")]
+        public Button confirmNameButton;
+        
         [Tooltip("Кнопка/Радио выбора пола (Девочка)")]
         public Image selectFemaleImage;
         
@@ -62,87 +65,38 @@ namespace CatWorld.Cats.Tutorial
             {
                 var go = new GameObject("TutorialManager");
                 _manager = go.AddComponent<TutorialManager>();
-                _manager.DisableAutoStart(); // Мы управляем запуском вручную
+                _manager.DisableAutoStart();
             }
 
-            // --- НАСТРОЙКА ШАГОВ ---
+            // --- УПРОЩЕННЫЙ СЦЕНАРИЙ ---
 
-            // 1) Добро пожаловать!
-            _manager.AddStep("Добро пожаловать в мир котов! 🐱\nДавай научимся основам.", null, duration: 3f);
+// 1. Приветствие
+            _manager.AddStep("Привет, мяу! Давай быстро разберемся, как играть, мяу!", targetImage: null, duration: 3f);
 
-            // 2) Откройте магазин
-            _manager.AddStep("Сначала нам нужен кот. Открой магазин.", shopButton, waitForClick: true);
-
-            // 3) Купите кота
-            _manager.AddStep("Купи кота.", buyCatButton, waitForClick: true);
-
-            // 4) Введите имя кота
-            _manager.AddStep("Придумай имя своему новому другу.", null, duration: 5f);
-            // Примечание: Тут мы просто подсвечиваем поле. Логика ввода текста остается за игроком.
-            // Если нужно ждать именно ввода, потребуется доработка TutorialStep, но пока оставим таймер.
-            
-            // 5) Подтвердите покупку
-            _manager.AddStep("Подтверди создание кота.", confirmBuyButton, waitForClick: true);
-            
-            _manager.AddStep("Закрой магазин", shopCloseButton, waitForClick: true);
-            
-            _manager.AddStep("Посмотри на своего нового друга! Но ему одиноко одному.", null, duration: 3f);
-
-            // 6) Откройте еще раз магазин
-            _manager.AddStep("Отлично! Теперь давай заведем ему пару. Снова открой магазин.", shopButton, waitForClick: true);
-
-            // 7) Купите еще одного кота
-            _manager.AddStep("Купи второго кота.", buyCatButton, waitForClick: true);
-
-            // 8) Выберите пол нового кота - девочка
-            _manager.AddStep("На этот раз выбери пол: Девочка ♀", selectFemaleImage, duration: 2f);
-
-            // 9) Введите имя кота
-            _manager.AddStep("Дай ей имя.", nameInputField.GetComponent<Image>(), duration: 5f);
-
-            // 10) Подтвердите покупку
-            _manager.AddStep("Подтверди покупку.", confirmBuyButton, waitForClick: true);
-            
-            _manager.AddStep("Закрой магазин", shopCloseButton, waitForClick: true);
-
-            // 11) Перетащите котов в дом для разведения
-            _manager.AddStep(
-                "Перетащи кота-мальчика в Дом! 🏠\n(Зажми кота и тяни сюда)", 
-                houseDropZone, 
-                duration: 0f, 
-                waitForDrop: true 
-            );
-            _manager.AddStep(
-                "Перетащи кота-девочку в Дом! 🏠\n(Зажми кота и тяни сюда)", 
-                houseDropZone, 
-                duration: 0f, 
-                waitForDrop: true 
-            );
-
-            // 12) Дождитесь появления нового котенка
-            _manager.AddStep("Жди... Скоро появится котенок! 👶", null, duration: 5f); 
-
-            // 13) Выберите имя нового котенка
-            _manager.AddStep("Ура! Котенок родился! Дай ему имя.", nameInputField.GetComponent<Image>(), duration: 3f);
-
-            // 14) Зайдите в магазин
-            _manager.AddStep("Котят стало много? Пора заработать монеты. Иди в магазин.", shopButton, waitForClick: true);
-
-            // 15) Нажмите продажа
-            _manager.AddStep("Переключись на вкладку 'Продажа'.", sellTabButton, waitForClick: true);
-
-            // 16) Продайте нового котенка
-            _manager.AddStep("Продай новорожденного котенка.", null, duration: 5f);
-
-            // 17) Зайдите в магазин (снова, чтобы купить ресурсы)
-            _manager.AddStep("Молодцы! Но коты хотят есть. Снова в магазин.", shopButton, waitForClick: true);
-
-            // 18) Купите вашим котам еды и воды
+// 2. Покупка ресурсов (сначала готовимся)
+            _manager.AddStep("Сначала открой магазин, мяу.", shopButton, waitForClick: true);
             _manager.AddStep("Купи немного Еды 🥕", buyFoodButton, waitForClick: true);
-            _manager.AddStep("И не забудь про Воду 💧", buyWaterButton, waitForClick: true);
+            _manager.AddStep("И не забудь купить Воду 💧", buyWaterButton, waitForClick: true);
+            _manager.AddStep("Теперь закрой магазин, мяу.", shopCloseButton, waitForClick: true);
 
-            // 19) На этом все! Удачной игры!
-            _manager.AddStep("Обучение завершено! 🎉\nТеперь ты готов к самостоятельной игре. Удачи!", null, duration: 4f);
+// 3. Покупка котов
+            _manager.AddStep("Теперь нам нужно купить котов. Давай еще раз открой магазин, мяу.", shopButton, waitForClick: true);
+            _manager.AddStep("Купи первого кота. Выбери пол: Мальчик", buyCatButton, waitForClick: true);
+            _manager.AddStep("Дай ему кошачье имя, мяу.", nameInputField.GetComponent<Image>(), duration: 2f);
+            _manager.AddStep("Подтверди покупку.", confirmBuyButton, waitForClick: true);
+
+            _manager.AddStep("Купи второго кота (девочку).", buyCatButton, waitForClick: true);
+            _manager.AddStep("Выбери пол: Девочка ♀", selectFemaleImage, duration: 1f);
+            _manager.AddStep("Дай ей имя, мяу.", nameInputField.GetComponent<Image>(), duration: 2f);
+            _manager.AddStep("Подтверди покупку.", confirmBuyButton, waitForClick: true);
+            _manager.AddStep("Закрой магазин, мяу.", shopCloseButton, waitForClick: true);
+
+// 4. Разведение
+            _manager.AddStep("Перетащи кота-мальчика в Домик 🏠", targetSprite: houseDropZone, duration: 4f);
+            _manager.AddStep("Перетащи кота-девочку в Домик 🏠", targetSprite: houseDropZone, duration: 4f);
+
+// 5. Финал
+            _manager.AddStep("Готово! У котов скоро появится котенок. Удачной игры, мяу! 🎉", targetImage: null, duration: 4f);
 
             // Запуск
             _manager.StartTutorial();

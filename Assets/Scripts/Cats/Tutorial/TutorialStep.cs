@@ -12,7 +12,6 @@ namespace CatWorld.Cats.Tutorial
         public SpriteRenderer TargetSprite { get; set; } // Новое поле
         
         public bool WaitForButtonClick { get; set; }
-        public bool WaitForDropEvent { get; set; }
         public float DisplayDuration { get; set; }
 
         // Конструктор для кнопки
@@ -22,31 +21,28 @@ namespace CatWorld.Cats.Tutorial
             TargetButton = targetButton;
             TargetImage = targetButton != null ? targetButton.GetComponent<Image>() : null;
             WaitForButtonClick = waitForClick;
-            WaitForDropEvent = false;
             DisplayDuration = duration;
         }
 
         // Конструктор для UI Image
-        public TutorialStep(string hintText, Image targetImage, float duration = 0f, bool waitForDrop = false)
+        public TutorialStep(string hintText, Image targetImage, float duration = 0f)
         {
             HintText = hintText;
             TargetImage = targetImage;
             TargetButton = null;
             TargetSprite = null;
             WaitForButtonClick = false;
-            WaitForDropEvent = waitForDrop;
             DisplayDuration = duration;
         }
 
         // Новый конструктор для SpriteRenderer
-        public TutorialStep(string hintText, SpriteRenderer targetSprite, float duration = 0f, bool waitForDrop = false)
+        public TutorialStep(string hintText, SpriteRenderer targetSprite, float duration = 0f)
         {
             HintText = hintText;
             TargetSprite = targetSprite;
             TargetImage = null;
             TargetButton = null;
             WaitForButtonClick = false;
-            WaitForDropEvent = waitForDrop;
             DisplayDuration = duration;
         }
         

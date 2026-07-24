@@ -76,9 +76,50 @@ namespace CatWorld.Cats.Tutorial
             if (_targetRect == null || _panelRect == null)
                 return;
 
-            // Размещаем подсказку выше целевого элемента
+            // Получаем размеры экрана в пикселях
+            float screenWidth = Screen.width;
+            float screenHeight = Screen.height;
+
+            // Позиция цели
             Vector3 targetPos = _targetRect.position;
-            _panelRect.position = new Vector3(targetPos.x, targetPos.y + _panelRect.rect.height / 2 + _offsetDistance, targetPos.z);
+        
+            // Размеры панели
+            float panelWidth = _panelRect.rect.width;
+            float panelHeight = _panelRect.rect.height;
+
+            // Начальная позиция: над целью + отступ
+            float posX = targetPos.x;
+            float posY = targetPos.y + panelHeight / 2 + _offsetDistance;
+
+            // Проверка горизонтальных границ
+            // Левая граница: posX - половина ширины панели не должна быть меньше 0
+            if (posX - panelWidth / 2 < 0)
+                posX = panelWidth / 2;
+        
+            // Правая граница: posX + половина ширины панели не должна быть больше ширины экрана
+            if (posX + panelWidth / 2 > screenWidth)
+                posX = screenWidth - panelWidth / 2;
+
+            // Проверка вертикальных границ
+            // Если панель вылезает за верхний край, пробуем разместить её ПОД целью
+            if (posY + panelHeight / 2 > screenHeight)
+            {
+                posY = targetPos.y - panelHeight / 2 - _offsetDistance;
+            
+                // Если и так вылезает за низ (редко, но бывает на маленьких экранах), 
+                // прижимаем к нижнему краю
+                if (posY - panelHeight / 2 < 0)
+                    posY = panelHeight / 2;
+            }
+        
+            // Дополнительная проверка нижнего края для стандартного случая (над целью)
+            if (posY - panelHeight / 2 < 0 && posY > targetPos.y) 
+            {
+                // Если мы всё еще над целью, но уперлись в низ (странно, но для надежности)
+                // Можно оставить как есть или тоже перевернуть вниз
+            }
+
+            _panelRect.position = new Vector3(posX, posY, targetPos.z);
         }
 
         private void FollowTarget()
