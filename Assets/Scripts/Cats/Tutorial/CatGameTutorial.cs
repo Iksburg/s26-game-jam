@@ -26,10 +26,10 @@ namespace CatWorld.Cats.Tutorial
         public Button confirmBuyButton;
         
         [Tooltip("Кнопка/Радио выбора пола (Девочка)")]
-        public Toggle selectFemaleButton;
+        public Image selectFemaleImage;
         
         [Tooltip("Зона дома, куда нужно перетащить котов (Image или RectTransform)")]
-        public Image houseDropZone;
+        public SpriteRenderer houseDropZone;
         
         [Tooltip("Кнопка продажи в магазине")]
         public Button sellTabButton;
@@ -95,7 +95,7 @@ namespace CatWorld.Cats.Tutorial
             _manager.AddStep("Купи второго кота.", buyCatButton, waitForClick: true);
 
             // 8) Выберите пол нового кота - девочка
-            _manager.AddStep("На этот раз выбери пол: Девочка ♀", null, duration: 2f);
+            _manager.AddStep("На этот раз выбери пол: Девочка ♀", selectFemaleImage, duration: 2f);
 
             // 9) Введите имя кота
             _manager.AddStep("Дай ей имя.", nameInputField.GetComponent<Image>(), duration: 5f);
@@ -107,7 +107,13 @@ namespace CatWorld.Cats.Tutorial
 
             // 11) Перетащите котов в дом для разведения
             _manager.AddStep(
-                "Перетащи кота в Дом! 🏠\n(Зажми кота и тяни сюда)", 
+                "Перетащи кота-мальчика в Дом! 🏠\n(Зажми кота и тяни сюда)", 
+                houseDropZone, 
+                duration: 0f, 
+                waitForDrop: true 
+            );
+            _manager.AddStep(
+                "Перетащи кота-девочку в Дом! 🏠\n(Зажми кота и тяни сюда)", 
                 houseDropZone, 
                 duration: 0f, 
                 waitForDrop: true 

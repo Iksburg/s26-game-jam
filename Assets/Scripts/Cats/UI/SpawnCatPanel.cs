@@ -1,5 +1,6 @@
 using System; // Добавлено для Action
 using Cats.Spawning;
+using CatWorld.Cats.Tutorial;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -23,6 +24,7 @@ namespace CatWorld.Cats
         [SerializeField] private Toggle _femaleToggle;
         [SerializeField] private Button _confirmButton;
         [SerializeField] private Button _cancelButton;
+        [SerializeField] private TutorialManager _tutorialManager;
 
         // Делегат, который выполнится при нажатии Confirm в режиме разведения
         private Action<string> _onNameConfirmedCallback;
@@ -139,6 +141,7 @@ namespace CatWorld.Cats
 
         private void RefreshConfirmButton()
         {
+            if (!_tutorialManager.Completed) return;
             _confirmButton.interactable = !string.IsNullOrWhiteSpace(_nameInput.text);
         }
 

@@ -37,6 +37,7 @@ namespace CatWorld.Cats.Tutorial
 
         public void RemoveHighlight()
         {
+            // ... (старая логика для Outline) ...
             if (_outline != null)
             {
                 _outline.effectColor = _originalOutlineColor;
@@ -44,6 +45,14 @@ namespace CatWorld.Cats.Tutorial
                 _outline.enabled = false;
                 StopAllCoroutines();
                 _outline = null;
+            }
+        
+            // Новая логика для Sprite
+            if (_targetSpriteForHighlight != null)
+            {
+                _targetSpriteForHighlight.color = _originalSpriteColor;
+                StopAllCoroutines();
+                _targetSpriteForHighlight = null;
             }
         }
 
@@ -55,6 +64,37 @@ namespace CatWorld.Cats.Tutorial
                 outline.enabled = false;
                 yield return new WaitForSeconds(0.3f);
                 outline.enabled = true;
+                yield return new WaitForSeconds(0.3f);
+            }
+        }
+
+        public void HighlightSprite(SpriteRenderer targetSprite)
+        {
+            if (targetSprite == null) return;
+        
+            RemoveHighlight();
+        
+            // Сохраняем оригинальный цвет
+            _originalSpriteColor = targetSprite.color;
+            _targetSpriteForHighlight = targetSprite;
+        
+            // Меняем цвет на желтый/подсвеченный
+            targetSprite.color = new Color(1f, 1f, 0.5f, 1f);
+        
+            // Можно добавить анимацию мигания через корутину, меняя alpha или цвет
+            StartCoroutine(BlinkSpriteEffect(targetSprite));
+        }
+
+        private SpriteRenderer _targetSpriteForHighlight;
+        private Color _originalSpriteColor;
+
+        private System.Collections.IEnumerator BlinkSpriteEffect(SpriteRenderer sprite)
+        {
+            while (sprite != null && sprite == _targetSpriteForHighlight)
+            {
+                sprite.color = new Color(1f, 1f, 0.5f, 1f);
+                yield return new WaitForSeconds(0.3f);
+                sprite.color = new Color(1f, 1f, 0.5f, 0.5f);
                 yield return new WaitForSeconds(0.3f);
             }
         }

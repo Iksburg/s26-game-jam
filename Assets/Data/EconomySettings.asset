@@ -12,12 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7176a23d338f5a0428e9d6575d830b7e, type: 3}
   m_Name: EconomySettings
   m_EditorClassIdentifier: Assembly-CSharp::CatWorld.Cats.EconomySettings
-  _startingCoins: 400
+  _startingCoins: 500
   _catPrice: 200
   _foodPrice: 10
   _foodAmountPerPurchase: 10
   _waterPrice: 5
   _waterAmountPerPurchase: 10
-  _kittenSellPrice: 150
+  _kittenSellPrice: 500
   _adultSellPrice: 100
   _seniorSellPrice: 0

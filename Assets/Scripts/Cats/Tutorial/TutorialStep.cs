@@ -1,4 +1,4 @@
-// TutorialStep.cs
+// В файле TutorialStep.cs
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,10 +9,10 @@ namespace CatWorld.Cats.Tutorial
         public string HintText { get; set; }
         public Button TargetButton { get; set; }
         public Image TargetImage { get; set; }
+        public SpriteRenderer TargetSprite { get; set; } // Новое поле
         
         public bool WaitForButtonClick { get; set; }
-        public bool WaitForDropEvent { get; set; } // Новое поле
-        
+        public bool WaitForDropEvent { get; set; }
         public float DisplayDuration { get; set; }
 
         // Конструктор для кнопки
@@ -26,15 +26,44 @@ namespace CatWorld.Cats.Tutorial
             DisplayDuration = duration;
         }
 
-        // Обновленный конструктор для изображения с поддержкой Drop
+        // Конструктор для UI Image
         public TutorialStep(string hintText, Image targetImage, float duration = 0f, bool waitForDrop = false)
         {
             HintText = hintText;
             TargetImage = targetImage;
             TargetButton = null;
+            TargetSprite = null;
             WaitForButtonClick = false;
-            WaitForDropEvent = waitForDrop; // Присваиваем значение
+            WaitForDropEvent = waitForDrop;
             DisplayDuration = duration;
+        }
+
+        // Новый конструктор для SpriteRenderer
+        public TutorialStep(string hintText, SpriteRenderer targetSprite, float duration = 0f, bool waitForDrop = false)
+        {
+            HintText = hintText;
+            TargetSprite = targetSprite;
+            TargetImage = null;
+            TargetButton = null;
+            WaitForButtonClick = false;
+            WaitForDropEvent = waitForDrop;
+            DisplayDuration = duration;
+        }
+        
+        // Помощник для получения RectTransform (для UI) или позиции (для World)
+        public RectTransform GetTargetRect()
+        {
+            if (TargetButton != null) return TargetButton.GetComponent<RectTransform>();
+            if (TargetImage != null) return TargetImage.GetComponent<RectTransform>();
+            return null;
+        }
+        
+        public Transform GetTargetTransform()
+        {
+            if (TargetSprite != null) return TargetSprite.transform;
+            if (TargetImage != null) return TargetImage.transform;
+            if (TargetButton != null) return TargetButton.transform;
+            return null;
         }
     }
 }
