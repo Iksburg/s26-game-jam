@@ -277,4 +277,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CatWorld.Cats.CatPoopController
   _poopPrefab: {fileID: 3568127681901784695, guid: c8e43c1ba6547eb4f929e667c8249f84, type: 3}
-  _poopDelay: 10
+  _poopDelay: 20

@@ -23,12 +23,12 @@ namespace Cats.Spawning
         [SerializeField] private float _defaultSexStrength = 10f;
 
         /// <summary>
-        /// Создаёт купленного кота: стадия «котёнок» и случайный цвет из палитры
-        /// (по правилам экономики покупки).
+        /// Создаёт купленного кота: стадия «взрослый» и случайный цвет из палитры
+        /// (по концепту покупается взрослый кот).
         /// </summary>
         public Cat SpawnPurchasedCat(Sex sex, string catName)
         {
-            return SpawnCat(sex, catName, LifeStage.Kitten);
+            return SpawnCat(sex, catName, LifeStage.Adult);
         }
 
         /// <summary>Создаёт кота с заданными полом и именем; остальное — по правилам спавна.</summary>

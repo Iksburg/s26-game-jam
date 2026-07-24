@@ -14,10 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CatWorld.Cats.EconomySettings
   _startingCoins: 500
   _catPrice: 200
-  _foodPrice: 10
+  _foodPrice: 20
   _foodAmountPerPurchase: 10
-  _waterPrice: 5
+  _waterPrice: 20
   _waterAmountPerPurchase: 10
-  _kittenSellPrice: 500
-  _adultSellPrice: 100
+  _kittenSellPrice: 100
+  _adultSellPrice: 50
   _seniorSellPrice: 0
