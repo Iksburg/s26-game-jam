@@ -1,10 +1,12 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Cats.Genome.Abstract;
 using CatWorld.Cats;
 using Cats.Spawning;
 using UnityEngine;
 using UnityEngine.Serialization;
+using Random = Unity.Mathematics.Random;
 
 namespace Cats.Genome.Breeding
 {
@@ -68,7 +70,6 @@ namespace Cats.Genome.Breeding
         private IEnumerator BreedingTimerRoutine()
         {
             yield return new WaitForSeconds(breedingDuration);
-
             if (!catSpawner)
             {
                 Debug.LogError("[SexRoom] Невозможно создать котенка: Ссылка на CatSpawner не задана в инспекторе!");
@@ -79,20 +80,69 @@ namespace Cats.Genome.Breeding
             // 1. Заранее рассчитываем пол и гены ребенка через бизнес-логику (до открытия UI)
             var fatherGenome = (CatGenomeMale)_parentMale.Genome;
             var motherGenome = (CatGenomeFemale)_parentFemale.Genome;
-            
             var preCalculatedSex = CatGenome.CalculateChildSex(fatherGenome.MaleStrength, motherGenome.FemaleStrength);
-            
+
             // 2. Открываем панель именования, скрывая выбор пола, и передаем Callback
             spawnCatPanel.OpenForBreeding(preCalculatedSex, (chosenName) =>
             {
                 // Генерируем геном уже с финальным именем, которое ввел игрок
                 var childGenome = CatBreedingService.Breed(chosenName, fatherGenome, motherGenome);
-    
+             
+                // Создаем котенка
                 var child = catSpawner.SpawnChildCat(chosenName, childGenome);
+             
+                // Наследуем черты от родителей
+                InheritTraits(child, _parentMale, _parentFemale);
+             
                 ClearRoom();
             });
-
             _breedingCoroutine = null;
+        }
+        
+        /// <summary>
+        /// Рассчитывает и применяет унаследованные черты от родителей к котенку.
+        /// Каждая черта родителя имеет шанс быть унаследованной.
+        /// </summary>
+        private void InheritTraits(Cat child, Cat father, Cat mother)
+        {
+            var inheritedTraits = new HashSet<CatTrait>();
+         
+            // Шанс наследования каждой черты (можно вынести в константу или настройку)
+            const float inheritChance = 0.5f;
+         
+            // Проверяем все врожденные черты отца
+            foreach (var trait in father.InnateTraits)
+            {
+                if (UnityEngine.Random.value < inheritChance && !inheritedTraits.Contains(trait))
+                {
+                    inheritedTraits.Add(trait);
+                }
+            }
+         
+            // Проверяем все врожденные черты матери
+            foreach (var trait in mother.InnateTraits)
+            {
+                if (UnityEngine.Random.value < inheritChance && !inheritedTraits.Contains(trait))
+                {
+                    inheritedTraits.Add(trait);
+                }
+            }
+         
+            // Применяем унаследованные черты к котенку (с учетом лимита MaxInnateTraits)
+            int appliedCount = 0;
+            foreach (var trait in inheritedTraits)
+            {
+                if (appliedCount >= Cat.MaxInnateTraits)
+                    break;
+                 
+                if (child.TryAddInnateTrait(trait))
+                {
+                    appliedCount++;
+                    Debug.Log($"[Наследование] Котенок {child.Name} унаследовал черту: {trait}");
+                }
+            }
+         
+            Debug.Log($"[Наследование] Всего унаследовано черт: {appliedCount} из {inheritedTraits.Count} возможных");
         }
 
         /// <summary> Сбрасывает состояние комнаты и подготавливает её к новой паре </summary>

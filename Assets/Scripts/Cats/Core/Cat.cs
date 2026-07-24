@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using Cats.Genome;
 using Cats.Genome.Abstract;
 using UnityEngine;
@@ -144,12 +146,69 @@ namespace CatWorld.Cats
             traits.Add(trait);
             return true;
         }
+        
+        /// <summary>
+        /// Пытается добавить приобретённую черту с заданным шансом.
+        /// Возвращает true, если черта была успешно добавлена.
+        /// </summary>
+        public bool TryAcquireTrait(CatTrait trait, float chance = 0.3f)
+        {
+            if (UnityEngine.Random.value > chance)
+                return false;
+
+            return TryAddAcquiredTrait(trait);
+        }
+
+        /// <summary>
+        /// Пытается случайно приобрести одну из возможных черт.
+        /// Используется для событий во время жизни кота.
+        /// </summary>
+        public bool TryRandomlyAcquireTrait(float chance = 0.1f)
+        {
+            if (UnityEngine.Random.value > chance)
+                return false;
+
+            // Получаем все возможные черты, которых ещё нет у кота
+            var allTraits = Enum.GetValues(typeof(CatTrait)).Cast<CatTrait>();
+            var availableTraits = allTraits.Where(t => 
+                !_innateTraits.Contains(t) && !_acquiredTraits.Contains(t)
+            ).ToList();
+
+            if (availableTraits.Count == 0)
+                return false;
+
+            var randomTrait = availableTraits[UnityEngine.Random.Range(0, availableTraits.Count)];
+            return TryAddAcquiredTrait(randomTrait);
+        }
 
         /// <summary>Метод перенесён в доменную модель генома. Оставлен для совместимости с внешними вызовами.</summary>
         public void AddChild(string childId)
         {
             // Метод оставлен пустым, так как связи детей теперь автоматически регистрируются 
             // в чистом C# конструкторе генома при его создании через CatBreedingService.
+        }
+        
+        /// <summary>
+        /// Вызывается после того, как кот поел. Есть шанс приобрести черту.
+        /// </summary>
+        public void OnFed()
+        {
+            TryRandomlyAcquireTrait(0.3f);
+    
+            // Показать мысль о еде
+            var thoughts = GetComponent<CatThoughts>();
+            thoughts?.ShowFedThought();
+        }
+        
+        /// <summary>
+        /// Вызывается после того, как кот попил. Есть шанс приобрести черту.
+        /// </summary>
+        public void OnDrank()
+        {
+            TryRandomlyAcquireTrait(0.3f);
+    
+            var thoughts = GetComponent<CatThoughts>();
+            thoughts?.ShowDrankThought();
         }
 
         // ---- Сеттеры состояния с валидацией ----

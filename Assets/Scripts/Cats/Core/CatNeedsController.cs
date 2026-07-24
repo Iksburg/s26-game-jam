@@ -140,6 +140,10 @@ namespace CatWorld.Cats
             _consumingType = type;
             _state = ConsumeState.GoingToStation;
             Debug.Log($"[CatNeeds] {_cat.Name} проголодался ({type}) и идёт к миске.");
+            
+            var thoughts = GetComponent<CatThoughts>();
+            thoughts?.CheckNeedsAndShow();
+            
             _wander.SetExternalTarget(station.Position, OnArrivedAtStation);
         }
 
@@ -162,9 +166,15 @@ namespace CatWorld.Cats
             if (consumed)
             {
                 if (_consumingType == NeedType.Food)
+                {
                     _cat.SetSatiety(Cat.MaxNeed);
+                    _cat.OnFed(); // <-- Вызываем метод получения черты после еды
+                }
                 else
+                {
                     _cat.SetWater(Cat.MaxNeed);
+                    _cat.OnDrank(); // <-- Вызываем метод получения черты после питья
+                }
                 Debug.Log($"[CatNeeds] {_cat.Name} поел/попил ({_consumingType}), показатель восстановлен до 100%.");
             }
 

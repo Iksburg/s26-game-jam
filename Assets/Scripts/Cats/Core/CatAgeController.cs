@@ -148,6 +148,9 @@ namespace CatWorld.Cats
 
         private void LeaveFarm()
         {
+            var thoughts = _cat.GetComponent<CatThoughts>();
+            thoughts?.ShowOldAgeDeparture();
+            
             _cat.SetFarmStatus(FarmStatus.InNewFamily);
             Debug.Log($"[CatAgeController] {_cat.Name} (пожилой) ушёл с фермы к новым хозяевам.");
             Destroy(gameObject);
